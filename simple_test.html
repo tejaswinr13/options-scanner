@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Options Scanner</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+        input { padding: 8px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Simple Options Scanner Test</h1>
+    
+    <div>
+        <label>Symbol:</label>
+        <input type="text" id="symbols" value="PLTR" />
+        
+        <label>Volume Threshold:</label>
+        <input type="number" id="volume_threshold" value="100" />
+        
+        <button onclick="startScan()">Start Scan</button>
+    </div>
+    
+    <div id="status" style="margin-top: 20px;"></div>
+    <div id="results" style="margin-top: 20px;"></div>
+    
+    <script>
+        function startScan() {
+            console.log('startScan called');
+            
+            const symbols = document.getElementById('symbols').value.trim();
+            const volumeThreshold = document.getElementById('volume_threshold').value;
+            
+            if (!symbols) {
+                alert('Please enter a symbol');
+                return;
+            }
+            
+            document.getElementById('status').innerHTML = 'Scanning...';
+            
+            fetch('/scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    symbols: symbols,
+                    volume_threshold: parseInt(volumeThreshold)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Response:', data);
+                if (data.error) {
+                    document.getElementById('status').innerHTML = 'Error: ' + data.error;
+                } else {
+                    document.getElementById('status').innerHTML = 'Scan started successfully!';
+                    pollStatus();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('status').innerHTML = 'Failed: ' + error.message;
+            });
+        }
+        
+        function pollStatus() {
+            fetch('/status')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Status:', data);
+                document.getElementById('status').innerHTML = data.progress || 'Checking status...';
+                
+                if (data.running) {
+                    setTimeout(pollStatus, 1000);
+                } else if (data.error) {
+                    document.getElementById('status').innerHTML = 'Error: ' + data.error;
+                } else {
+                    document.getElementById('status').innerHTML = 'Scan completed!';
+                    getResults();
+                }
+            })
+            .catch(error => {
+                console.error('Status error:', error);
+                document.getElementById('status').innerHTML = 'Status check failed';
+            });
+        }
+        
+        function getResults() {
+            fetch('/results')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Results:', data);
+                if (data.options && data.options.length > 0) {
+                    document.getElementById('results').innerHTML = 
+                        '<h3>Found ' + data.options.length + ' options</h3>' +
+                        '<pre>' + JSON.stringify(data.options.slice(0, 3), null, 2) + '</pre>';
+                } else {
+                    document.getElementById('results').innerHTML = '<h3>No options found</h3>';
+                }
+            })
+            .catch(error => {
+                console.error('Results error:', error);
+                document.getElementById('results').innerHTML = 'Failed to get results';
+            });
+        }
+    </script>
+</body>
+</html>

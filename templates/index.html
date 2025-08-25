@@ -201,7 +201,7 @@
                         <small class="text-muted">Minimum volume to display</small>
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
-                        <button id="scanBtn" class="btn btn-primary scan-btn w-100">
+                        <button type="button" id="scanBtn" class="btn btn-primary scan-btn w-100" onclick="startScanDirect();">
                             <i class="fas fa-search"></i> Start Scan
                         </button>
                     </div>
@@ -223,6 +223,30 @@
             </div>
 
             <div id="resultsContainer" class="results-container" style="display: none;">
+                <div class="mx-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3><i class="fas fa-table"></i> Options Results</h3>
+                        <div class="d-flex gap-2">
+                            <span id="totalResults" class="badge bg-info"></span>
+                            <span id="totalVolume" class="badge bg-success"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Call vs Put Volume Chart -->
+                    <div class="row mb-4">
+                        <div class="col-md-4 mx-auto">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-chart-pie"></i> Call vs Put Volume</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="volumeChart" width="300" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
                 <div id="summaryCards" class="summary-cards"></div>
                 
                 <div class="mb-3">
@@ -286,22 +310,63 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         let scanInterval;
+        let volumeChart = null;
+        let sentimentChart = null;
 
-        document.getElementById('scanBtn').addEventListener('click', function() {
+        // Direct scan function
+        window.startScanDirect = function() {
+            console.log('startScanDirect called');
+            
             const symbols = document.getElementById('symbols').value.trim();
             const volumeThreshold = document.getElementById('volume_threshold').value;
-
+            
             if (!symbols) {
                 alert('Please enter at least one symbol');
                 return;
             }
-
-            startScan(symbols, volumeThreshold);
-        });
+            
+            // Disable button and show status
+            const btn = document.getElementById('scanBtn');
+            btn.disabled = true;
+            btn.innerHTML = 'Scanning...';
+            
+            document.getElementById('statusContainer').style.display = 'block';
+            
+            // Make API call
+            fetch('/scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    symbols: symbols,
+                    volume_threshold: parseInt(volumeThreshold)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-search"></i> Start Scan';
+                } else {
+                    pollStatus();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to start scan: ' + error.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-search"></i> Start Scan';
+            });
+        }
 
         function startScan(symbols, volumeThreshold) {
+            console.log('startScan called with:', symbols, volumeThreshold);
             const btn = document.getElementById('scanBtn');
             btn.disabled = true;
             btn.innerHTML = '<div class="spinner"></div> Scanning...';
@@ -309,6 +374,7 @@
             document.getElementById('statusContainer').style.display = 'block';
             document.getElementById('resultsContainer').style.display = 'none';
 
+            console.log('Making fetch request to /scan');
             fetch('/scan', {
                 method: 'POST',
                 headers: {
@@ -319,8 +385,12 @@
                     volume_threshold: volumeThreshold
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('Response data:', data);
                 if (data.error) {
                     showError(data.error);
                     resetButton();
@@ -330,6 +400,7 @@
                 }
             })
             .catch(error => {
+                console.error('Fetch error:', error);
                 showError('Failed to start scan: ' + error.message);
                 resetButton();
             });
@@ -406,6 +477,11 @@
                 return;
             }
 
+            // Calculate call vs put volume
+            const callVolume = data.options.filter(opt => opt.type === 'CALL').reduce((sum, opt) => sum + opt.volume, 0);
+            const putVolume = data.options.filter(opt => opt.type === 'PUT').reduce((sum, opt) => sum + opt.volume, 0);
+            const callPutRatio = putVolume > 0 ? (callVolume / putVolume).toFixed(2) : 'N/A';
+            
             // Show summary cards
             const summaryCards = document.getElementById('summaryCards');
             summaryCards.innerHTML = `
@@ -426,74 +502,84 @@
                     <p>Puts</p>
                 </div>
             `;
-
+            
+            // Populate table with options data
             const tbody = document.getElementById('resultsBody');
             tbody.innerHTML = '';
             
-            const options = data.options;
-            if (!options || options.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="14" class="text-center text-muted">No results found</td></tr>';
-                return;
-            }
-            
-            options.forEach(option => {
+            data.options.forEach(option => {
                 const row = document.createElement('tr');
-                row.className = `option-row ${option.type.toLowerCase()}-option`;
-                row.setAttribute('data-type', option.type);
-                row.setAttribute('data-expiry', option.expiration);
                 
-                const typeClass = option.type === 'CALL' ? 'call-badge' : 'put-badge';
-                const volumeClass = option.volume > 1000 ? 'high-volume' : '';
+                const bidDisplay = option.bid && option.bid > 0 ? `$${option.bid.toFixed(2)}` : 'N/A';
+                const askDisplay = option.ask && option.ask > 0 ? `$${option.ask.toFixed(2)}` : 'N/A';
                 
-                // Calculate price difference
-                const stockPrice = parseFloat(option.current_stock_price || option.current_price || 0);
-                const strikePrice = parseFloat(option.strike);
-                const priceDiff = stockPrice - strikePrice;
-                const diffClass = priceDiff > 0 ? 'text-success' : priceDiff < 0 ? 'text-danger' : 'text-muted';
-                const diffSign = priceDiff > 0 ? '+' : '';
-
                 row.innerHTML = `
-                    <td><strong>${option.symbol}</strong></td>
-                    <td>$${stockPrice.toFixed(2)}</td>
-                    <td class="${diffClass}">${diffSign}$${priceDiff.toFixed(2)}</td>
-                    <td>$${strikePrice.toFixed(2)}</td>
+                    <td>${option.symbol}</td>
                     <td>${option.expiration}</td>
-                    <td><span class="badge ${typeClass}">${option.type}</span></td>
-                    <td class="${volumeClass}">${parseInt(option.volume).toLocaleString()}</td>
-                    <td>${parseInt(option.openInterest || 0).toLocaleString()}</td>
-                    <td>${option.bid && option.bid > 0 ? '$' + parseFloat(option.bid).toFixed(2) : 'N/A'}</td>
-                    <td>${option.ask && option.ask > 0 ? '$' + parseFloat(option.ask).toFixed(2) : 'N/A'}</td>
-                    <td>$${parseFloat(option.lastPrice || 0).toFixed(2)}</td>
-                    <td>${(parseFloat(option.impliedVolatility || 0) * 100).toFixed(1)}%</td>
-                    <td>${parseFloat(option.delta || 0).toFixed(3)}</td>
-                    <td>${parseFloat(option.gamma || 0).toFixed(4)}</td>
-                    <td>${parseFloat(option.theta || 0).toFixed(3)}</td>
-                    <td>${parseFloat(option.rho || 0).toFixed(3)}</td>
+                    <td>$${option.strike}</td>
+                    <td><span class="badge ${option.type === 'CALL' ? 'bg-success' : 'bg-danger'}">${option.type}</span></td>
+                    <td>${option.volume.toLocaleString()}</td>
+                    <td>${option.openInterest.toLocaleString()}</td>
+                    <td>$${option.lastPrice.toFixed(2)}</td>
+                    <td>${bidDisplay}</td>
+                    <td>${askDisplay}</td>
+                    <td>${(option.impliedVolatility * 100).toFixed(1)}%</td>
+                    <td>${option.delta.toFixed(3)}</td>
+                    <td>${option.gamma.toFixed(3)}</td>
+                    <td>${option.theta.toFixed(3)}</td>
+                    <td>${option.rho.toFixed(3)}</td>
                 `;
                 
                 tbody.appendChild(row);
             });
             
-        }
-
-        function showError(message) {
-            const statusCard = document.getElementById('statusCard');
-            const statusText = document.getElementById('statusText');
-            const statusProgress = document.getElementById('statusProgress');
-            const statusSpinner = document.getElementById('statusSpinner');
-
-            statusCard.className = 'status-card error';
-            statusText.textContent = 'Error';
-            statusProgress.textContent = message;
-            statusSpinner.style.display = 'none';
+            // Create charts
+            createVolumeChart(data);
             
-            document.getElementById('statusContainer').style.display = 'block';
+            resetButton();
         }
 
         function resetButton() {
             const btn = document.getElementById('scanBtn');
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-search"></i> Start Scan';
+        }
+
+        // Create volume chart
+        function createVolumeChart(data) {
+            const ctx = document.getElementById('volumeChart').getContext('2d');
+            
+            if (volumeChart) {
+                volumeChart.destroy();
+            }
+            
+            const callVolume = data.options.filter(opt => opt.type === 'CALL').reduce((sum, opt) => sum + opt.volume, 0);
+            const putVolume = data.options.filter(opt => opt.type === 'PUT').reduce((sum, opt) => sum + opt.volume, 0);
+            
+            volumeChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Calls', 'Puts'],
+                    datasets: [{
+                        data: [callVolume, putVolume],
+                        backgroundColor: ['#28a745', '#dc3545'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Call vs Put Volume Distribution'
+                        }
+                    }
+                }
+            });
         }
 
         // Filter options function
@@ -681,10 +767,12 @@
         }
 
         // Allow Enter key to trigger scan
-        document.getElementById('symbols').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('scanBtn').click();
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('symbols').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleScanClick();
+                }
+            });
         });
     </script>
 </body>

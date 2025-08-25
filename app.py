@@ -27,6 +27,30 @@ def index():
     response.headers['Expires'] = '0'
     return response
 
+@app.route('/debug_test.html')
+def debug_test():
+    """Debug test page"""
+    with open('debug_test.html', 'r') as f:
+        content = f.read()
+    response = make_response(content)
+    response.headers['Content-Type'] = 'text/html'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@app.route('/simple_test.html')
+def simple_test():
+    """Simple test page"""
+    with open('simple_test.html', 'r') as f:
+        content = f.read()
+    response = make_response(content)
+    response.headers['Content-Type'] = 'text/html'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 @app.route('/scan', methods=['POST'])
 def scan_options():
     """Start options scan"""

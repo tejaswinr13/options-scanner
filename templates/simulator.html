@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Options Trading Simulator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            margin: 20px auto;
+            max-width: 1600px;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+        }
+        .nav-tabs {
+            background: #f8f9fa;
+            padding: 20px 20px 0 20px;
+            border-radius: 0;
+        }
+        .nav-tabs .nav-link {
+            border-radius: 10px 10px 0 0;
+            margin-right: 10px;
+            font-weight: 600;
+        }
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        .tab-content {
+            padding: 30px;
+            background: white;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: 600;
+        }
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            border-radius: 10px;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+            border: none;
+            border-radius: 10px;
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        .summary-card h3 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .summary-card p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        .profit {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .loss {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .positions-table {
+            font-size: 13px;
+        }
+        .positions-table th {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            border: none;
+            padding: 15px 10px;
+            font-weight: 600;
+        }
+        .positions-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+        .position-open {
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+        .position-closed {
+            background-color: rgba(108, 117, 125, 0.1);
+        }
+        .greeks-display {
+            font-size: 11px;
+        }
+        .scenario-chart {
+            height: 400px;
+            margin: 20px 0;
+        }
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <div class="header">
+                <h1><i class="fas fa-chart-area"></i> Options Trading Simulator</h1>
+                <p class="mb-0">Advanced options position tracking with P&L analysis and Greeks</p>
+                <div class="mt-3">
+                    <a href="/" class="btn btn-outline-light me-2">
+                        <i class="fas fa-search"></i> Volume Scanner
+                    </a>
+                    <a href="/simulator" class="btn btn-light">
+                        <i class="fas fa-calculator"></i> Simulator
+                    </a>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs" id="simulatorTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="portfolio-tab" data-bs-toggle="tab" data-bs-target="#portfolio" type="button">
+                        <i class="fas fa-briefcase"></i> Portfolio
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="add-position-tab" data-bs-toggle="tab" data-bs-target="#add-position" type="button">
+                        <i class="fas fa-plus"></i> Add Position
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="scenario-tab" data-bs-toggle="tab" data-bs-target="#scenario" type="button">
+                        <i class="fas fa-chart-line"></i> Scenario Analysis
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="simulatorTabContent">
+                <!-- Portfolio Tab -->
+                <div class="tab-pane fade show active" id="portfolio" role="tabpanel">
+                    <div id="portfolioSummary" class="summary-cards"></div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-list"></i> Positions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table id="positionsTable" class="table table-hover positions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Symbol</th>
+                                            <th>Strike</th>
+                                            <th>Exp</th>
+                                            <th>Type</th>
+                                            <th>Qty</th>
+                                            <th>Entry</th>
+                                            <th>Current</th>
+                                            <th>P&L</th>
+                                            <th>Greeks</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="positionsBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Position Tab -->
+                <div class="tab-pane fade" id="add-position" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-plus"></i> Add New Position</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="addPositionForm">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Symbol</label>
+                                                    <input type="text" class="form-control" id="symbol" placeholder="AAPL" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Strike Price</label>
+                                                    <input type="number" class="form-control" id="strike" step="0.01" placeholder="150.00" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Expiration Date</label>
+                                                    <input type="date" class="form-control" id="expiration" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Option Type</label>
+                                                    <select class="form-select" id="optionType" required>
+                                                        <option value="">Select Type</option>
+                                                        <option value="CALL">Call</option>
+                                                        <option value="PUT">Put</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Quantity (Contracts)</label>
+                                                    <input type="number" class="form-control" id="quantity" placeholder="1" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Entry Price (Optional)</label>
+                                                    <input type="number" class="form-control" id="entryPrice" step="0.01" placeholder="Auto-calculate">
+                                                    <small class="text-muted">Leave blank to use theoretical price</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Add Position
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Quick Guide</h6>
+                                </div>
+                                <div class="card-body">
+                                    <h6>Position Entry:</h6>
+                                    <ul class="small">
+                                        <li>Enter valid stock symbol (e.g., AAPL, TSLA)</li>
+                                        <li>Strike price in dollars</li>
+                                        <li>Future expiration date</li>
+                                        <li>Positive quantity = Long position</li>
+                                        <li>Negative quantity = Short position</li>
+                                    </ul>
+                                    <h6 class="mt-3">Auto-Features:</h6>
+                                    <ul class="small">
+                                        <li>Real-time stock price fetching</li>
+                                        <li>Implied volatility from market</li>
+                                        <li>Theoretical pricing (Black-Scholes)</li>
+                                        <li>Live Greeks calculations</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scenario Analysis Tab -->
+                <div class="tab-pane fade" id="scenario" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-sliders-h"></i> Scenario Parameters</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Price Change Range (%)</label>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <input type="number" class="form-control" id="minPriceChange" value="-30" placeholder="Min %">
+                                            </div>
+                                            <div class="col-6">
+                                                <input type="number" class="form-control" id="maxPriceChange" value="30" placeholder="Max %">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Time Decay (Days)</label>
+                                        <input type="number" class="form-control" id="timeDays" value="0" min="0" max="365">
+                                        <small class="text-muted">Days to simulate forward</small>
+                                    </div>
+                                    <button class="btn btn-primary w-100" onclick="runScenarioAnalysis()">
+                                        <i class="fas fa-play"></i> Run Analysis
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> P&L Scenarios</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="scenarioChart" class="scenario-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Close Position Modal -->
+    <div class="modal fade" id="closePositionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Close Position</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Exit Price (Optional)</label>
+                        <input type="number" class="form-control" id="exitPrice" step="0.01" placeholder="Current market price">
+                        <small class="text-muted">Leave blank to use current theoretical price</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmClosePosition()">Close Position</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentPositionToClose = null;
+        let scenarioChart = null;
+
+        // Load portfolio data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPortfolioData();
+            
+            // Set default expiration date to next Friday
+            const nextFriday = getNextFriday();
+            document.getElementById('expiration').value = nextFriday;
+        });
+
+        function getNextFriday() {
+            const today = new Date();
+            const daysUntilFriday = (5 - today.getDay() + 7) % 7 || 7;
+            const nextFriday = new Date(today.getTime() + daysUntilFriday * 24 * 60 * 60 * 1000);
+            return nextFriday.toISOString().split('T')[0];
+        }
+
+        // Add position form handler
+        document.getElementById('addPositionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                symbol: document.getElementById('symbol').value.toUpperCase(),
+                strike: document.getElementById('strike').value,
+                expiration: document.getElementById('expiration').value,
+                option_type: document.getElementById('optionType').value,
+                quantity: document.getElementById('quantity').value,
+                entry_price: document.getElementById('entryPrice').value || null
+            };
+
+            fetch('/add_position', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Position added successfully!', 'success');
+                    document.getElementById('addPositionForm').reset();
+                    document.getElementById('expiration').value = getNextFriday();
+                    loadPortfolioData();
+                } else {
+                    showAlert('Error: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Error adding position: ' + error.message, 'danger');
+            });
+        });
+
+        function loadPortfolioData() {
+            // Load portfolio summary
+            fetch('/portfolio_summary')
+            .then(response => response.json())
+            .then(data => {
+                updatePortfolioSummary(data);
+            })
+            .catch(error => console.error('Error loading portfolio summary:', error));
+
+            // Load positions
+            fetch('/positions')
+            .then(response => response.json())
+            .then(data => {
+                updatePositionsTable(data.positions);
+            })
+            .catch(error => console.error('Error loading positions:', error));
+        }
+
+        function updatePortfolioSummary(data) {
+            const summaryHtml = `
+                <div class="summary-card">
+                    <h3>${data.total_positions}</h3>
+                    <p>Total Positions</p>
+                </div>
+                <div class="summary-card">
+                    <h3>$${data.total_current_value.toLocaleString(undefined, {minimumFractionDigits: 2})}</h3>
+                    <p>Current Value</p>
+                </div>
+                <div class="summary-card">
+                    <h3 class="${data.total_pnl >= 0 ? 'profit' : 'loss'}">$${data.total_pnl.toLocaleString(undefined, {minimumFractionDigits: 2})}</h3>
+                    <p>Total P&L</p>
+                </div>
+                <div class="summary-card">
+                    <h3>${data.portfolio_greeks.delta.toFixed(2)}</h3>
+                    <p>Portfolio Delta</p>
+                </div>
+            `;
+            document.getElementById('portfolioSummary').innerHTML = summaryHtml;
+        }
+
+        function updatePositionsTable(positions) {
+            const tbody = document.getElementById('positionsBody');
+            tbody.innerHTML = '';
+
+            positions.forEach(position => {
+                const row = document.createElement('tr');
+                row.className = position.status === 'OPEN' ? 'position-open' : 'position-closed';
+                
+                const pnl = position.unrealized_pnl || position.realized_pnl || 0;
+                const pnlClass = pnl >= 0 ? 'profit' : 'loss';
+                
+                row.innerHTML = `
+                    <td>${position.id}</td>
+                    <td><strong>${position.symbol}</strong></td>
+                    <td>$${position.strike}</td>
+                    <td>${position.expiration}</td>
+                    <td><span class="badge ${position.type === 'CALL' ? 'bg-success' : 'bg-danger'}">${position.type}</span></td>
+                    <td>${position.quantity}</td>
+                    <td>$${position.entry_price.toFixed(2)}</td>
+                    <td>$${(position.current_option_price || position.exit_price || 0).toFixed(2)}</td>
+                    <td class="${pnlClass}">$${pnl.toFixed(2)}</td>
+                    <td class="greeks-display">
+                        Δ:${position.greeks.delta.toFixed(3)}<br>
+                        Γ:${position.greeks.gamma.toFixed(4)}<br>
+                        Θ:${position.greeks.theta.toFixed(3)}
+                    </td>
+                    <td><span class="badge ${position.status === 'OPEN' ? 'bg-success' : 'bg-secondary'}">${position.status}</span></td>
+                    <td>
+                        ${position.status === 'OPEN' ? 
+                            `<button class="btn btn-sm btn-danger" onclick="openClosePositionModal(${position.id})">Close</button>` : 
+                            '<span class="text-muted">Closed</span>'
+                        }
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function openClosePositionModal(positionId) {
+            currentPositionToClose = positionId;
+            document.getElementById('exitPrice').value = '';
+            new bootstrap.Modal(document.getElementById('closePositionModal')).show();
+        }
+
+        function confirmClosePosition() {
+            if (!currentPositionToClose) return;
+
+            const exitPrice = document.getElementById('exitPrice').value || null;
+            
+            fetch('/close_position', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    position_id: currentPositionToClose,
+                    exit_price: exitPrice
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Position closed successfully!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('closePositionModal')).hide();
+                    loadPortfolioData();
+                } else {
+                    showAlert('Error: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Error closing position: ' + error.message, 'danger');
+            });
+        }
+
+        function runScenarioAnalysis() {
+            const minChange = parseInt(document.getElementById('minPriceChange').value);
+            const maxChange = parseInt(document.getElementById('maxPriceChange').value);
+            const timeDays = parseInt(document.getElementById('timeDays').value);
+            
+            // Generate price changes array
+            const priceChanges = [];
+            for (let i = minChange; i <= maxChange; i += 2) {
+                priceChanges.push(i);
+            }
+
+            fetch('/scenario_analysis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    price_changes: priceChanges,
+                    time_decay_days: timeDays
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateScenarioChart(data.scenarios);
+            })
+            .catch(error => {
+                showAlert('Error running scenario analysis: ' + error.message, 'danger');
+            });
+        }
+
+        function updateScenarioChart(scenarios) {
+            const ctx = document.getElementById('scenarioChart').getContext('2d');
+            
+            if (scenarioChart) {
+                scenarioChart.destroy();
+            }
+
+            const labels = scenarios.map(s => s.price_change + '%');
+            const data = scenarios.map(s => s.total_pnl);
+            
+            scenarioChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Portfolio P&L',
+                        data: data,
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'P&L ($)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Stock Price Change (%)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true
+                        },
+                        title: {
+                            display: true,
+                            text: 'Portfolio P&L vs Stock Price Movement'
+                        }
+                    }
+                }
+            });
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.tab-content').insertBefore(alertDiv, document.querySelector('.tab-content').firstChild);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // Auto-refresh portfolio data every 30 seconds
+        setInterval(loadPortfolioData, 30000);
+    </script>
+</body>
+</html>

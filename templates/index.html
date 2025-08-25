@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Options Volume Scanner</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            margin: 20px auto;
+            max-width: 1400px;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+        }
+        .control-panel {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        .results-container {
+            margin: 20px;
+            padding: 25px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        .symbol-input {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 15px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .symbol-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .scan-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .scan-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        .scan-btn:disabled {
+            opacity: 0.6;
+            transform: none;
+        }
+        .status-card {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .status-card.error {
+            background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+        }
+        .status-card.running {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+        .high-volume {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .call-badge {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+        .put-badge {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+        .sentiment-bullish {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .sentiment-bearish {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .sentiment-neutral {
+            color: #95a5a6;
+            font-weight: normal;
+        }
+        .options-table {
+            font-size: 12px;
+            margin-top: 20px;
+        }
+        .options-table th {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            border: none;
+            padding: 12px 8px;
+            font-weight: 600;
+        }
+        .options-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+        .call-row {
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+        .put-row {
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+        .volume-high {
+            font-weight: bold;
+            color: #dc3545;
+        }
+        .delta-positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+        .delta-negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .summary-card h4 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .summary-card p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <div class="header">
+                <h1><i class="fas fa-chart-line"></i> Options Volume Scanner</h1>
+                <p class="mb-0">Real-time options activity analysis with Greeks calculations</p>
+            </div>
+
+            <div class="control-panel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="symbols" class="form-label"><strong>Stock Symbols</strong></label>
+                        <input type="text" id="symbols" class="form-control symbol-input" 
+                               placeholder="Enter symbols (e.g., AAPL,TSLA,NVDA)" 
+                               value="CHGG,AAPL,TSLA">
+                        <small class="text-muted">Separate multiple symbols with commas</small>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="volume_threshold" class="form-label"><strong>Volume Threshold</strong></label>
+                        <input type="number" id="volume_threshold" class="form-control symbol-input" 
+                               value="100" min="1" max="10000">
+                        <small class="text-muted">Minimum volume to display</small>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button id="scanBtn" class="btn btn-primary scan-btn w-100">
+                            <i class="fas fa-search"></i> Start Scan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="statusContainer" style="display: none;">
+                <div class="mx-3">
+                    <div id="statusCard" class="status-card">
+                        <div class="d-flex align-items-center">
+                            <div id="statusSpinner" class="spinner me-3" style="display: none;"></div>
+                            <div>
+                                <strong id="statusText">Ready to scan</strong>
+                                <div id="statusProgress" class="small"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="resultsContainer" class="results-container" style="display: none;">
+                <div id="summaryCards" class="summary-cards"></div>
+                
+                <div class="mb-3">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="btn-group" role="group" aria-label="Filter options">
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="filterOptions('all')">
+                                    <i class="fas fa-list"></i> All Options
+                                </button>
+                                <button type="button" class="btn btn-outline-success me-2" onclick="filterOptions('CALL')">
+                                    <i class="fas fa-arrow-up"></i> Calls Only
+                                </button>
+                                <button type="button" class="btn btn-outline-danger me-2" onclick="filterOptions('PUT')">
+                                    <i class="fas fa-arrow-down"></i> Puts Only
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <label for="expiryFilter" class="form-label me-2 mb-0"><strong>Expiry:</strong></label>
+                                <select id="expiryFilter" class="form-select" onchange="filterByExpiry()">
+                                    <option value="all">All Dates</option>
+                                    <option value="weekly">This Week</option>
+                                    <option value="monthly">This Month</option>
+                                    <option value="quarterly">Next 3 Months</option>
+                                    <option value="leaps">LEAPS (1+ Years)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table id="resultsTable" class="table table-hover options-table">
+                        <thead>
+                            <tr>
+                                <th style="cursor: pointer;" onclick="sortTable(0)">Symbol <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(1)">Stock Price <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(2)">Diff <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(3)">Strike <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(4)">Exp <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(5)">Type <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(6)">Volume <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(7)">OI <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(8)">Last <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(9)">IV <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(10)">Delta <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(11)">Gamma <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(12)">Theta <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(13)">Rho <i class="fas fa-sort"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let scanInterval;
+
+        document.getElementById('scanBtn').addEventListener('click', function() {
+            const symbols = document.getElementById('symbols').value.trim();
+            const volumeThreshold = document.getElementById('volume_threshold').value;
+
+            if (!symbols) {
+                alert('Please enter at least one symbol');
+                return;
+            }
+
+            startScan(symbols, volumeThreshold);
+        });
+
+        function startScan(symbols, volumeThreshold) {
+            const btn = document.getElementById('scanBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Scanning...';
+
+            document.getElementById('statusContainer').style.display = 'block';
+            document.getElementById('resultsContainer').style.display = 'none';
+
+            fetch('/scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    symbols: symbols,
+                    volume_threshold: volumeThreshold
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error);
+                    resetButton();
+                } else {
+                    // Start polling for status
+                    pollStatus();
+                }
+            })
+            .catch(error => {
+                showError('Failed to start scan: ' + error.message);
+                resetButton();
+            });
+        }
+
+        function pollStatus() {
+            scanInterval = setInterval(() => {
+                fetch('/status')
+                .then(response => response.json())
+                .then(status => {
+                    updateStatus(status);
+                    
+                    if (!status.running) {
+                        clearInterval(scanInterval);
+                        resetButton();
+                        
+                        if (status.error) {
+                            showError(status.error);
+                        } else {
+                            loadResults();
+                        }
+                    }
+                })
+                .catch(error => {
+                    clearInterval(scanInterval);
+                    showError('Failed to get status: ' + error.message);
+                    resetButton();
+                });
+            }, 1000);
+        }
+
+        function updateStatus(status) {
+            const statusCard = document.getElementById('statusCard');
+            const statusText = document.getElementById('statusText');
+            const statusProgress = document.getElementById('statusProgress');
+            const statusSpinner = document.getElementById('statusSpinner');
+
+            if (status.running) {
+                statusCard.className = 'status-card running';
+                statusText.textContent = 'Scanning in progress...';
+                statusProgress.textContent = status.progress;
+                statusSpinner.style.display = 'block';
+            } else if (status.error) {
+                statusCard.className = 'status-card error';
+                statusText.textContent = 'Scan failed';
+                statusProgress.textContent = status.error;
+                statusSpinner.style.display = 'none';
+            } else {
+                statusCard.className = 'status-card';
+                statusText.textContent = 'Scan completed successfully!';
+                statusProgress.textContent = status.progress;
+                statusSpinner.style.display = 'none';
+            }
+        }
+
+        function loadResults() {
+            fetch('/results')
+            .then(response => response.json())
+            .then(data => {
+                displayResults(data);
+            })
+            .catch(error => {
+                showError('Failed to load results: ' + error.message);
+            });
+        }
+
+        function displayResults(data) {
+            // Hide status container and show results
+            document.getElementById('statusContainer').style.display = 'none';
+            document.getElementById('resultsContainer').style.display = 'block';
+            
+            if (!data.options || data.options.length === 0) {
+                showError('No unusual options activity found');
+                return;
+            }
+
+            // Show summary cards
+            const summaryCards = document.getElementById('summaryCards');
+            summaryCards.innerHTML = `
+                <div class="summary-card">
+                    <h4>${data.summary.total_options}</h4>
+                    <p>Total Options</p>
+                </div>
+                <div class="summary-card">
+                    <h4>${data.summary.total_volume.toLocaleString()}</h4>
+                    <p>Total Volume</p>
+                </div>
+                <div class="summary-card">
+                    <h4>${data.summary.calls}</h4>
+                    <p>Calls</p>
+                </div>
+                <div class="summary-card">
+                    <h4>${data.summary.puts}</h4>
+                    <p>Puts</p>
+                </div>
+            `;
+
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '';
+            
+            const options = data.options;
+            if (!options || options.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="14" class="text-center text-muted">No results found</td></tr>';
+                return;
+            }
+            
+            options.forEach(option => {
+                const row = document.createElement('tr');
+                row.className = `option-row ${option.type.toLowerCase()}-option`;
+                row.setAttribute('data-type', option.type);
+                row.setAttribute('data-expiry', option.expiration);
+                
+                const typeClass = option.type === 'CALL' ? 'call-badge' : 'put-badge';
+                const volumeClass = option.volume > 1000 ? 'high-volume' : '';
+                
+                // Calculate price difference
+                const stockPrice = parseFloat(option.current_stock_price || option.current_price || 0);
+                const strikePrice = parseFloat(option.strike);
+                const priceDiff = stockPrice - strikePrice;
+                const diffClass = priceDiff > 0 ? 'text-success' : priceDiff < 0 ? 'text-danger' : 'text-muted';
+                const diffSign = priceDiff > 0 ? '+' : '';
+
+                row.innerHTML = `
+                    <td><strong>${option.symbol}</strong></td>
+                    <td>$${stockPrice.toFixed(2)}</td>
+                    <td class="${diffClass}">${diffSign}$${priceDiff.toFixed(2)}</td>
+                    <td>$${strikePrice.toFixed(2)}</td>
+                    <td>${option.expiration}</td>
+                    <td><span class="badge ${typeClass}">${option.type}</span></td>
+                    <td class="${volumeClass}">${parseInt(option.volume).toLocaleString()}</td>
+                    <td>${parseInt(option.openInterest || 0).toLocaleString()}</td>
+                    <td>$${parseFloat(option.lastPrice || 0).toFixed(2)}</td>
+                    <td>${(parseFloat(option.impliedVolatility || 0) * 100).toFixed(1)}%</td>
+                    <td>${parseFloat(option.delta || 0).toFixed(3)}</td>
+                    <td>${parseFloat(option.gamma || 0).toFixed(4)}</td>
+                    <td>${parseFloat(option.theta || 0).toFixed(3)}</td>
+                    <td>${parseFloat(option.rho || 0).toFixed(3)}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+        }
+
+        function showError(message) {
+            const statusCard = document.getElementById('statusCard');
+            const statusText = document.getElementById('statusText');
+            const statusProgress = document.getElementById('statusProgress');
+            const statusSpinner = document.getElementById('statusSpinner');
+
+            statusCard.className = 'status-card error';
+            statusText.textContent = 'Error';
+            statusProgress.textContent = message;
+            statusSpinner.style.display = 'none';
+            
+            document.getElementById('statusContainer').style.display = 'block';
+        }
+
+        function resetButton() {
+            const btn = document.getElementById('scanBtn');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-search"></i> Start Scan';
+        }
+
+        // Filter options function
+        function filterOptions(type) {
+            const rows = document.querySelectorAll('#resultsBody tr');
+            let visibleCount = 0;
+            let totalVolume = 0;
+            let callCount = 0;
+            let putCount = 0;
+            
+            rows.forEach(row => {
+                const optionType = row.getAttribute('data-type');
+                let shouldShow = false;
+                
+                if (type === 'all') {
+                    shouldShow = true;
+                } else if (type === 'CALL' || type === 'PUT') {
+                    shouldShow = optionType === type;
+                }
+                
+                if (shouldShow) {
+                    row.style.display = '';
+                    visibleCount++;
+                    
+                    // Count volume and types for visible rows
+                    const volumeText = row.cells[5].textContent.replace(/,/g, '');
+                    totalVolume += parseInt(volumeText) || 0;
+                    
+                    if (optionType === 'CALL') callCount++;
+                    if (optionType === 'PUT') putCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Update active button
+            document.querySelectorAll('.btn-group button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update summary cards with filtered data
+            const summaryCards = document.getElementById('summaryCards');
+            summaryCards.innerHTML = `
+                <div class="summary-card">
+                    <h4>${visibleCount}</h4>
+                    <p>Filtered Options</p>
+                </div>
+                <div class="summary-card">
+                    <h4>${totalVolume.toLocaleString()}</h4>
+                    <p>Total Volume</p>
+                </div>
+                <div class="summary-card">
+                    <h4>${callCount}</h4>
+                    <p>Calls</p>
+                </div>
+                <div class="summary-card">
+                    <h4>${putCount}</h4>
+                    <p>Puts</p>
+                </div>
+            `;
+        }
+
+        // Filter by expiry date
+        function filterByExpiry() {
+            const expiryFilter = document.getElementById('expiryFilter').value;
+            const rows = document.querySelectorAll('#resultsBody tr');
+            const today = new Date();
+            let visibleCount = 0;
+            let totalVolume = 0;
+            let callCount = 0;
+            let putCount = 0;
+            
+            rows.forEach(row => {
+                const expiryDate = new Date(row.getAttribute('data-expiry'));
+                const daysDiff = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+                let shouldShow = false;
+                
+                switch(expiryFilter) {
+                    case 'all':
+                        shouldShow = true;
+                        break;
+                    case 'weekly':
+                        shouldShow = daysDiff <= 7;
+                        break;
+                    case 'monthly':
+                        shouldShow = daysDiff <= 30;
+                        break;
+                    case 'quarterly':
+                        shouldShow = daysDiff <= 90;
+                        break;
+                    case 'leaps':
+                        shouldShow = daysDiff >= 365;
+                        break;
+                }
+                
+                if (shouldShow) {
+                    row.style.display = '';
+                    visibleCount++;
+                    
+                    // Count volume and types for visible rows
+                    const volumeText = row.cells[4].textContent.replace(/,/g, '');
+                    totalVolume += parseInt(volumeText) || 0;
+                    
+                    const optionType = row.getAttribute('data-type');
+                    if (optionType === 'CALL') callCount++;
+                    if (optionType === 'PUT') putCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Update summary cards with filtered data
+            const summaryCards = document.getElementById('summaryCards');
+            summaryCards.innerHTML = `
+                <div class="summary-card">
+                    <h4>${visibleCount}</h4>
+                    <p>Filtered Options</p>
+                </div>
+                <div class="summary-card">
+                    <h4>${totalVolume.toLocaleString()}</h4>
+                    <p>Total Volume</p>
+                </div>
+                <div class="summary-card">
+                    <h4>${callCount}</h4>
+                    <p>Calls</p>
+                </div>
+                <div class="summary-card">
+                    <h4>${putCount}</h4>
+                    <p>Puts</p>
+                </div>
+            `;
+        }
+
+        // Sort table functionality
+        let sortDirection = {};
+        
+        function sortTable(columnIndex) {
+            const table = document.getElementById('resultsTable');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Reset all other column icons
+            table.querySelectorAll('th i').forEach(icon => {
+                icon.className = 'fas fa-sort';
+            });
+            
+            // Toggle sort direction
+            const direction = sortDirection[columnIndex] === 'asc' ? 'desc' : 'asc';
+            sortDirection[columnIndex] = direction;
+            
+            // Sort rows based on column content
+            rows.sort((a, b) => {
+                let aVal = a.cells[columnIndex].textContent.trim();
+                let bVal = b.cells[columnIndex].textContent.trim();
+                
+                // Parse numeric columns
+                if ([1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13].includes(columnIndex)) {
+                    // Remove $ signs, commas, and % signs, then parse as float
+                    aVal = parseFloat(aVal.replace(/[$,%]/g, '')) || 0;
+                    bVal = parseFloat(bVal.replace(/[$,%]/g, '')) || 0;
+                }
+                // Parse date column (Exp)
+                else if (columnIndex === 4) {
+                    aVal = new Date(aVal);
+                    bVal = new Date(bVal);
+                }
+                
+                if (direction === 'asc') {
+                    return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+                } else {
+                    return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+                }
+            });
+            
+            // Clear tbody and append sorted rows
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+            
+            // Update sort icon for current column
+            const header = table.querySelector(`th:nth-child(${columnIndex + 1}) i`);
+            if (header) {
+                header.className = direction === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+            }
+        }
+
+        // Allow Enter key to trigger scan
+        document.getElementById('symbols').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('scanBtn').click();
+            }
+        });
+    </script>
+</body>
+</html>

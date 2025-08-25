@@ -145,3 +145,6 @@
 2025-08-25 05:28:40,997 INFO: Scan request: symbols=INTU, threshold=100 [in /Users/tejaswinrenugunta/CascadeProjects/growAgent/options/app.py:88]
 2025-08-25 05:28:40,998 INFO: Starting scan for 1 symbols: ['INTU'] [in /Users/tejaswinrenugunta/CascadeProjects/growAgent/options/app.py:109]
 2025-08-25 05:28:42,780 INFO: Scan completed: 80 options found, total volume: 20486 [in /Users/tejaswinrenugunta/CascadeProjects/growAgent/options/app.py:125]
+2025-08-25 05:28:53,097 INFO: Scan request: symbols=INTU, threshold=1000 [in /Users/tejaswinrenugunta/CascadeProjects/growAgent/options/app.py:88]
+2025-08-25 05:28:53,097 INFO: Starting scan for 1 symbols: ['INTU'] [in /Users/tejaswinrenugunta/CascadeProjects/growAgent/options/app.py:109]
+2025-08-25 05:28:54,687 INFO: Scan completed: 1 options found, total volume: 1374 [in /Users/tejaswinrenugunta/CascadeProjects/growAgent/options/app.py:125]

@@ -8,6 +8,9 @@ set -e  # Exit on any error
 echo "🚀 Starting Options Scanner deployment..."
 echo "========================================"
 
+# Remove log file to prevent conflicts
+rm -f logs/options_scanner.log
+
 # Create logs directory if it doesn't exist
 if [ ! -d "logs" ]; then
     echo "📁 Creating logs directory..."
@@ -56,8 +59,7 @@ sleep 2
 
 # Pull latest code from GitHub
 print_status "Pulling latest code from GitHub..."
-# Remove log file to prevent conflicts
-rm -f logs/options_scanner.log
+
 # Stash any local changes to log files before pulling
 git stash push logs/ -m "Stash log files before deployment"
 git pull origin main

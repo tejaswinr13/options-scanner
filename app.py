@@ -8,6 +8,7 @@ from flask import Flask, render_template, request, jsonify, make_response
 import json
 from yahoo_options_scanner import YahooOptionsScanner
 from options_simulator import OptionsSimulator
+from dark_pool_scanner import DarkPoolScanner
 import threading
 import time
 import logging
@@ -35,6 +36,11 @@ scan_results = {}
 scan_status = {"running": False, "progress": "", "error": None}
 simulator = OptionsSimulator()
 
+# Dark pool scanner globals
+dark_pool_results = {}
+dark_pool_status = {"running": False, "progress": "", "error": None}
+dark_pool_scanner = DarkPoolScanner()
+
 @app.route('/')
 def index():
     """Main page"""
@@ -43,6 +49,11 @@ def index():
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
+
+@app.route('/favicon.ico')
+def favicon():
+    """Serve favicon"""
+    return app.send_static_file('favicon.ico')
 
 @app.route('/debug_test.html')
 def debug_test():
@@ -56,13 +67,10 @@ def debug_test():
     response.headers['Expires'] = '0'
     return response
 
-@app.route('/simple_test.html')
-def simple_test():
-    """Simple test page"""
-    with open('simple_test.html', 'r') as f:
-        content = f.read()
-    response = make_response(content)
-    response.headers['Content-Type'] = 'text/html'
+@app.route('/dark-pool')
+def dark_pool_page():
+    """Dark pool activity scanner page"""
+    response = make_response(render_template('dark_pool.html'))
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
@@ -207,5 +215,63 @@ def scenario_analysis():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Dark Pool API Endpoints
+@app.route('/api/dark-pool/scan', methods=['POST'])
+def start_dark_pool_scan():
+    """Start dark pool activity scan"""
+    global dark_pool_status, dark_pool_results
+    
+    data = request.get_json()
+    index = data.get('index', 'sp500')
+    max_tickers = int(data.get('max_tickers', 50))
+    
+    app.logger.info(f'Dark pool scan request: index={index}, max_tickers={max_tickers}')
+    
+    if dark_pool_status["running"]:
+        app.logger.warning('Dark pool scan request failed: Scan already in progress')
+        return jsonify({"error": "Dark pool scan already in progress"}), 400
+    
+    # Start scan in background thread
+    def run_dark_pool_scan():
+        global dark_pool_status, dark_pool_results
+        try:
+            dark_pool_status = {"running": True, "progress": "Starting dark pool scan...", "error": None}
+            
+            dark_pool_status["progress"] = f"Scanning {index} index for unusual activity..."
+            app.logger.info(f'Starting dark pool scan for {index} index, max {max_tickers} tickers')
+            
+            results = dark_pool_scanner.scan_index(index, max_tickers)
+            summary = dark_pool_scanner.get_scan_summary(results)
+            
+            dark_pool_results = {
+                "results": results,
+                "summary": summary
+            }
+            
+            app.logger.info(f'Dark pool scan completed: {len(results)} alerts found')
+            dark_pool_status = {"running": False, "progress": "Dark pool scan completed!", "error": None}
+            
+        except Exception as e:
+            app.logger.error(f'Dark pool scan failed: {str(e)}')
+            dark_pool_status = {"running": False, "progress": "", "error": str(e)}
+    
+    thread = threading.Thread(target=run_dark_pool_scan)
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({"message": "Dark pool scan started successfully"})
+
+@app.route('/api/dark-pool/status')
+def get_dark_pool_status():
+    """Get dark pool scan status"""
+    return jsonify(dark_pool_status)
+
+@app.route('/api/dark-pool/results')
+def get_dark_pool_results():
+    """Get dark pool scan results"""
+    return jsonify(dark_pool_results)
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    print(" Starting Options Scanner on http://127.0.0.1:8080")
+    print(" Dark Pool Scanner available at http://127.0.0.1:8080/dark-pool")
+    app.run(host='0.0.0.0', port=8080, debug=False)

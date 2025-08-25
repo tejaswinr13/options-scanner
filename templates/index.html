@@ -197,6 +197,12 @@
         <div class="main-container">
             <div class="header">
                 <h1><i class="fas fa-chart-line"></i> Options Volume Scanner</h1>
+                <a href="/simulator" class="btn btn-outline-light me-2">
+                    <i class="fas fa-calculator"></i> Options Simulator
+                </a>
+                <a href="/dark-pool" class="btn btn-outline-light me-2">
+                    <i class="fas fa-eye"></i> Dark Pool Scanner
+                </a>
                 <p class="mb-0">Real-time options activity analysis with Greeks calculations</p>
             </div>
 
@@ -286,20 +292,19 @@
                             <tr>
                                 <th style="cursor: pointer;" onclick="sortTable(0)">Symbol <i class="fas fa-sort"></i></th>
                                 <th style="cursor: pointer;" onclick="sortTable(1)">Stock Price <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(2)">Diff <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(2)">Exp <i class="fas fa-sort"></i></th>
                                 <th style="cursor: pointer;" onclick="sortTable(3)">Strike <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(4)">Exp <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(5)">Type <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(6)">Volume <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(7)">OI <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(8)">Bid <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(9)">Ask <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(10)">Last <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(11)">IV <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(12)">Delta <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(13)">Gamma <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(14)">Theta <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(15)">Rho <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(4)">Type <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(5)">Volume <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(6)">OI <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(7)">Bid <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(8)">Ask <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(9)">Last <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(10)">IV <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(11)">Delta <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(12)">Gamma <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(13)">Theta <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(14)">Rho <i class="fas fa-sort"></i></th>
                             </tr>
                         </thead>
                         <tbody id="resultsBody">
@@ -520,21 +525,25 @@
                 const bidDisplay = option.bid && option.bid > 0 ? `$${option.bid.toFixed(2)}` : 'N/A';
                 const askDisplay = option.ask && option.ask > 0 ? `$${option.ask.toFixed(2)}` : 'N/A';
                 
+                // Try both field names since backend sets both
+                const stockPrice = option.current_stock_price || option.current_price;
+                
                 row.innerHTML = `
                     <td>${option.symbol}</td>
+                    <td>$${stockPrice ? stockPrice.toFixed(2) : 'N/A'}</td>
                     <td>${option.expiration}</td>
                     <td>$${option.strike}</td>
                     <td><span class="badge ${option.type === 'CALL' ? 'bg-success' : 'bg-danger'}">${option.type}</span></td>
-                    <td>${option.volume.toLocaleString()}</td>
-                    <td>${option.openInterest.toLocaleString()}</td>
-                    <td>$${option.lastPrice.toFixed(2)}</td>
+                    <td>${option.volume ? option.volume.toLocaleString() : '0'}</td>
+                    <td>${option.openInterest ? option.openInterest.toLocaleString() : '0'}</td>
                     <td>${bidDisplay}</td>
                     <td>${askDisplay}</td>
-                    <td>${(option.impliedVolatility * 100).toFixed(1)}%</td>
-                    <td>${option.delta.toFixed(3)}</td>
-                    <td>${option.gamma.toFixed(3)}</td>
-                    <td>${option.theta.toFixed(3)}</td>
-                    <td>${option.rho.toFixed(3)}</td>
+                    <td>$${option.lastPrice ? option.lastPrice.toFixed(2) : '0.00'}</td>
+                    <td>${option.impliedVolatility ? (option.impliedVolatility * 100).toFixed(1) + '%' : '0.0%'}</td>
+                    <td>${option.delta ? option.delta.toFixed(3) : '0.000'}</td>
+                    <td>${option.gamma ? option.gamma.toFixed(3) : '0.000'}</td>
+                    <td>${option.theta ? option.theta.toFixed(3) : '0.000'}</td>
+                    <td>${option.rho ? option.rho.toFixed(3) : '0.000'}</td>
                 `;
                 
                 tbody.appendChild(row);

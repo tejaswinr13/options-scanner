@@ -27,6 +27,37 @@ class YahooOptionsScanner:
         ]
         self.risk_free_rate = 0.05  # 5% risk-free rate (approximate)
     
+    def filter_expiration_dates(self, exp_dates, expiry_filter):
+        """Filter expiration dates based on the selected filter"""
+        print(f"🔍 Filtering expiration dates: filter='{expiry_filter}', total_dates={len(exp_dates)}")
+        
+        if expiry_filter == 'all':
+            print(f"✅ Using all {len(exp_dates)} expiration dates")
+            return exp_dates
+        
+        today = datetime.now().date()
+        filtered_dates = []
+        
+        for exp_date_str in exp_dates:
+            exp_date = datetime.strptime(exp_date_str, '%Y-%m-%d').date()
+            days_to_expiry = (exp_date - today).days
+            
+            if expiry_filter == 'this_week' and days_to_expiry <= 7:
+                filtered_dates.append(exp_date_str)
+                print(f"📅 Added {exp_date_str} (days: {days_to_expiry}) - THIS WEEK")
+            elif expiry_filter == 'this_month' and days_to_expiry <= 30:
+                filtered_dates.append(exp_date_str)
+                print(f"📅 Added {exp_date_str} (days: {days_to_expiry}) - THIS MONTH")
+            elif expiry_filter == 'next_3_months' and days_to_expiry <= 90:
+                filtered_dates.append(exp_date_str)
+                print(f"📅 Added {exp_date_str} (days: {days_to_expiry}) - NEXT 3 MONTHS")
+            elif expiry_filter == 'leaps' and days_to_expiry >= 365:
+                filtered_dates.append(exp_date_str)
+                print(f"📅 Added {exp_date_str} (days: {days_to_expiry}) - LEAPS")
+        
+        print(f"✅ Filtered to {len(filtered_dates)} expiration dates")
+        return filtered_dates
+    
     def calculate_greeks(self, S, K, T, r, sigma, option_type='call'):
         """Calculate option Greeks using Black-Scholes model"""
         try:
@@ -58,7 +89,7 @@ class YahooOptionsScanner:
             return {'delta': 0, 'gamma': 0, 'theta': 0, 'rho': 0}
     
     
-    def get_options_data(self, symbol: str, volume_threshold: int = 100):
+    def get_options_data(self, symbol: str, volume_threshold: int = 100, expiry_filter: str = 'all'):
         """
         Get options data for a symbol with volume filtering and sentiment analysis
         """
@@ -85,13 +116,19 @@ class YahooOptionsScanner:
                 print(f"No options data available for {symbol}")
                 return []
             
+            # Filter expiration dates based on expiry_filter
+            filtered_exp_dates = self.filter_expiration_dates(exp_dates, expiry_filter)
+            if not filtered_exp_dates:
+                print(f"No options data available for {symbol} with filter '{expiry_filter}'")
+                return []
+            
             all_options = []
             total_call_volume = 0
             total_put_volume = 0
             total_call_oi = 0
             total_put_oi = 0
             
-            for exp_date in exp_dates:
+            for exp_date in filtered_exp_dates:
                 try:
                     # Get options chain for this expiration
                     opt_chain = ticker.option_chain(exp_date)
@@ -238,17 +275,18 @@ class YahooOptionsScanner:
         print(f"\n{Fore.GREEN}✅ Found {len(df)} options with unusual activity{Style.RESET_ALL}")
         print(f"{Fore.BLUE}💡 High volume may indicate significant market moves or institutional activity{Style.RESET_ALL}")
 
-    def scan_custom_symbols(self, symbols: List[str], volume_threshold: int = 100) -> List[Dict]:
+    def scan_custom_symbols(self, symbols: List[str], volume_threshold: int = 100, expiry_filter: str = 'all') -> List[Dict]:
         """Scan custom list of symbols for unusual options activity"""
         print(f"{Fore.GREEN}🔍 Starting Custom Options Volume Scan{Style.RESET_ALL}")
         print(f"Volume threshold: {volume_threshold}+ contracts")
+        print(f"Expiry filter: {expiry_filter}")
         print(f"Symbols: {', '.join(symbols)}\n")
         
         all_unusual_options = []
         
         for symbol in symbols:
             try:
-                unusual_options = self.get_options_data(symbol.upper(), volume_threshold)
+                unusual_options = self.get_options_data(symbol.upper(), volume_threshold, expiry_filter)
                 all_unusual_options.extend(unusual_options)
             except Exception as e:
                 print(f"{Fore.RED}Error scanning {symbol}: {str(e)}{Style.RESET_ALL}")

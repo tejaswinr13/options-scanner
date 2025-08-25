@@ -84,8 +84,9 @@ def scan_options():
     data = request.get_json()
     symbols = data.get('symbols', '').strip().upper()
     volume_threshold = int(data.get('volume_threshold', 100))
+    expiry_filter = data.get('expiry_filter', 'all')
     
-    app.logger.info(f'Scan request: symbols={symbols}, threshold={volume_threshold}')
+    app.logger.info(f'Scan request: symbols={symbols}, threshold={volume_threshold}, expiry_filter={expiry_filter}')
     
     if not symbols:
         app.logger.warning('Scan request failed: No symbols provided')
@@ -108,7 +109,7 @@ def scan_options():
             scan_status["progress"] = f"Scanning {len(symbol_list)} symbols..."
             app.logger.info(f'Starting scan for {len(symbol_list)} symbols: {symbol_list}')
             
-            results = scanner.scan_custom_symbols(symbol_list, volume_threshold)
+            results = scanner.scan_custom_symbols(symbol_list, volume_threshold, expiry_filter)
             
             scan_results = {
                 "options": results,
@@ -118,7 +119,8 @@ def scan_options():
                     "calls": len([opt for opt in results if opt['type'] == 'CALL']),
                     "puts": len([opt for opt in results if opt['type'] == 'PUT']),
                     "symbols_scanned": symbol_list,
-                    "volume_threshold": volume_threshold
+                    "volume_threshold": volume_threshold,
+                    "expiry_filter": expiry_filter
                 }
             }
             

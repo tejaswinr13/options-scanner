@@ -267,12 +267,14 @@
                                 <th style="cursor: pointer;" onclick="sortTable(5)">Type <i class="fas fa-sort"></i></th>
                                 <th style="cursor: pointer;" onclick="sortTable(6)">Volume <i class="fas fa-sort"></i></th>
                                 <th style="cursor: pointer;" onclick="sortTable(7)">OI <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(8)">Last <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(9)">IV <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(10)">Delta <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(11)">Gamma <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(12)">Theta <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(13)">Rho <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(8)">Bid <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(9)">Ask <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(10)">Last <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(11)">IV <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(12)">Delta <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(13)">Gamma <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(14)">Theta <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(15)">Rho <i class="fas fa-sort"></i></th>
                             </tr>
                         </thead>
                         <tbody id="resultsBody">
@@ -459,6 +461,8 @@
                     <td><span class="badge ${typeClass}">${option.type}</span></td>
                     <td class="${volumeClass}">${parseInt(option.volume).toLocaleString()}</td>
                     <td>${parseInt(option.openInterest || 0).toLocaleString()}</td>
+                    <td>${option.bid && option.bid > 0 ? '$' + parseFloat(option.bid).toFixed(2) : 'N/A'}</td>
+                    <td>${option.ask && option.ask > 0 ? '$' + parseFloat(option.ask).toFixed(2) : 'N/A'}</td>
                     <td>$${parseFloat(option.lastPrice || 0).toFixed(2)}</td>
                     <td>${(parseFloat(option.impliedVolatility || 0) * 100).toFixed(1)}%</td>
                     <td>${parseFloat(option.delta || 0).toFixed(3)}</td>

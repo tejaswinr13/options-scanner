@@ -56,6 +56,8 @@ sleep 2
 
 # Pull latest code from GitHub
 print_status "Pulling latest code from GitHub..."
+# Remove log file to prevent conflicts
+rm -f logs/options_scanner.log
 # Stash any local changes to log files before pulling
 git stash push logs/ -m "Stash log files before deployment"
 git pull origin main

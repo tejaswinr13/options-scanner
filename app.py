@@ -10,8 +10,25 @@ from yahoo_options_scanner import YahooOptionsScanner
 from options_simulator import OptionsSimulator
 import threading
 import time
+import logging
+from logging.handlers import RotatingFileHandler
+import os
 
 app = Flask(__name__)
+
+# Setup logging
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+if not app.debug:
+    file_handler = RotatingFileHandler('logs/options_scanner.log', maxBytes=10240000, backupCount=10)
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    file_handler.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler)
+    app.logger.setLevel(logging.INFO)
+    app.logger.info('Options Scanner startup')
 
 # Global variables for storing scan results and simulator
 scan_results = {}
@@ -60,13 +77,17 @@ def scan_options():
     symbols = data.get('symbols', '').strip().upper()
     volume_threshold = int(data.get('volume_threshold', 100))
     
+    app.logger.info(f'Scan request: symbols={symbols}, threshold={volume_threshold}')
+    
     if not symbols:
+        app.logger.warning('Scan request failed: No symbols provided')
         return jsonify({"error": "Please enter at least one symbol"}), 400
     
     # Parse symbols
     symbol_list = [s.strip() for s in symbols.split(',') if s.strip()]
     
     if scan_status["running"]:
+        app.logger.warning('Scan request failed: Scan already in progress')
         return jsonify({"error": "Scan already in progress"}), 400
     
     # Start scan in background thread
@@ -77,6 +98,8 @@ def scan_options():
             scanner = YahooOptionsScanner()
             
             scan_status["progress"] = f"Scanning {len(symbol_list)} symbols..."
+            app.logger.info(f'Starting scan for {len(symbol_list)} symbols: {symbol_list}')
+            
             results = scanner.scan_custom_symbols(symbol_list, volume_threshold)
             
             scan_results = {
@@ -91,9 +114,11 @@ def scan_options():
                 }
             }
             
+            app.logger.info(f'Scan completed: {len(results)} options found, total volume: {scan_results["summary"]["total_volume"]}')
             scan_status = {"running": False, "progress": "Scan completed!", "error": None}
             
         except Exception as e:
+            app.logger.error(f'Scan failed: {str(e)}')
             scan_status = {"running": False, "progress": "", "error": str(e)}
     
     thread = threading.Thread(target=run_scan)

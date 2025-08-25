@@ -5,7 +5,14 @@
 
 set -e  # Exit on any error
 
-echo "🚀 Starting deployment..."
+echo "🚀 Starting Options Scanner deployment..."
+echo "========================================"
+
+# Create logs directory if it doesn't exist
+if [ ! -d "logs" ]; then
+    echo "📁 Creating logs directory..."
+    mkdir -p logs
+fi
 
 # Colors for output
 GREEN='\033[0;32m'

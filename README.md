@@ -1,6 +1,6 @@
 # Options Volume Scanner
 
-A comprehensive web-based tool to scan for unusual options activity using Yahoo Finance data, featuring real-time analysis with Greeks calculations.
+A comprehensive web-based tool to scan for unusual options activity using Yahoo Finance data, featuring real-time analysis with Greeks calculations and integrated visual analytics.
 
 ## Features
 
@@ -10,6 +10,9 @@ A comprehensive web-based tool to scan for unusual options activity using Yahoo 
 - 🎯 **Custom Symbols**: Enter any stock symbols you want to analyze
 - 📈 **Greeks Calculations**: Delta, Gamma, Theta, Rho for all options
 - 🔄 **Live Filtering**: Filter between calls only, puts only, or all options
+- 📊 **Visual Analytics**: Integrated pie chart showing call vs put volume distribution
+- 📝 **Production Logging**: Comprehensive logging with automatic rotation and cleanup
+- 🚀 **GCP Ready**: Deployment scripts for cloud hosting
 - 🆓 **100% Free**: Uses Yahoo Finance data - no API keys or fees required
 
 ## Installation
@@ -52,7 +55,8 @@ python3 yahoo_options_scanner.py
 - **Real-time Status**: Live progress updates during scanning
 
 ### Results Display
-- **Summary Cards**: Total options, volume, calls/puts breakdown
+- **Summary Cards**: Total options, volume, calls/puts breakdown with unified styling
+- **Visual Analytics**: Integrated pie chart showing call vs put volume distribution
 - **Filter Buttons**: Show all, calls only, or puts only
 - **Interactive Table**: Sort and view all option data
 - **Greeks Display**: Complete risk metrics for each option
@@ -91,15 +95,88 @@ self.symbols = ['AAPL', 'TSLA', 'NVDA', 'YOUR_SYMBOLS_HERE']
 - **Theta**: Time decay (daily value loss)
 - **Rho**: Interest rate sensitivity
 
+## GCP Deployment
+
+### Quick Deploy
+```bash
+# On your GCP VM
+cd ~/options-scanner
+./deploy.sh
+```
+
+### Manual Setup
+1. **Clone Repository**:
+```bash
+git clone https://github.com/tejaswinr13/options-scanner.git
+cd options-scanner
+```
+
+2. **Install Dependencies**:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+3. **Start Production Server**:
+```bash
+# Background process
+nohup python3 app.py > app.log 2>&1 &
+
+# Or use the deployment script
+./deploy.sh
+```
+
+4. **Stop Server**:
+```bash
+./stop.sh
+```
+
+### Log Management
+
+**Automatic Logging**:
+- Production logs: `logs/options_scanner.log`
+- Automatic rotation at 10MB (keeps 10 files)
+- Detailed request/response logging
+
+**Log Cleanup**:
+```bash
+# Manual cleanup
+./log_cleanup.sh
+
+# Automated weekly cleanup (add to crontab)
+0 0 * * 0 /home/username/options-scanner/log_cleanup.sh >> /home/username/cron.log 2>&1
+```
+
+**Monitor Logs**:
+```bash
+# Real-time monitoring
+tail -f logs/options_scanner.log
+
+# Check disk usage
+df -h
+du -sh logs/
+```
+
 ## File Structure
 
 ```
 options/
-├── app.py                    # Flask web server
+├── app.py                    # Flask web server with logging
 ├── yahoo_options_scanner.py  # Core scanner logic
 ├── quick_scan.py            # Command line utility
+├── options_simulator.py     # Options simulation engine
+├── deploy.sh                # GCP deployment script
+├── stop.sh                  # Server stop script
+├── log_cleanup.sh           # Log management utility
 ├── templates/
-│   └── index.html           # Web interface
+│   ├── index.html           # Main web interface
+│   └── simulator.html       # Options simulator
+├── static/
+│   ├── css/                 # Stylesheets
+│   └── js/                  # JavaScript files
+├── logs/
+│   └── options_scanner.log  # Application logs
 ├── requirements.txt         # Dependencies
 └── README.md               # This file
 ```
@@ -109,6 +186,7 @@ options/
 ### Web Server Issues
 - **Port 8080 in use**: Change port in `app.py`
 - **Dependencies missing**: Run `pip install -r requirements.txt`
+- **Process not stopping**: Use `./stop.sh` or `pkill -f app.py`
 
 ### Data Issues
 - **No options found**: Verify symbols have options trading
@@ -119,6 +197,11 @@ options/
 - **Memory usage**: Large scans use more memory
 - **Speed**: Scanning many symbols takes time
 - **Network**: Requires internet connection
+
+### Logging Issues
+- **No logs appearing**: Check `logs/` directory exists and permissions
+- **Log files too large**: Run `./log_cleanup.sh` to clean up
+- **Disk space full**: Monitor with `df -h` and clean old logs
 
 ## Disclaimer
 

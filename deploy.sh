@@ -56,6 +56,8 @@ sleep 2
 
 # Pull latest code from GitHub
 print_status "Pulling latest code from GitHub..."
+# Stash any local changes to log files before pulling
+git stash push logs/ -m "Stash log files before deployment"
 git pull origin main
 
 # Check if virtual environment exists

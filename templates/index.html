@@ -292,19 +292,20 @@
                             <tr>
                                 <th style="cursor: pointer;" onclick="sortTable(0)">Symbol <i class="fas fa-sort"></i></th>
                                 <th style="cursor: pointer;" onclick="sortTable(1)">Stock Price <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(2)">Exp <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(3)">Strike <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(4)">Type <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(5)">Volume <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(6)">OI <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(7)">Bid <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(8)">Ask <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(9)">Last <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(10)">IV <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(11)">Delta <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(12)">Gamma <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(13)">Theta <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(14)">Rho <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(2)">Diff <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(3)">Exp <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(4)">Strike <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(5)">Type <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(6)">Volume <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(7)">OI <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(8)">Bid <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(9)">Ask <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(10)">Last <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(11)">IV <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(12)">Delta <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(13)">Gamma <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(14)">Theta <i class="fas fa-sort"></i></th>
+                                <th style="cursor: pointer;" onclick="sortTable(15)">Rho <i class="fas fa-sort"></i></th>
                             </tr>
                         </thead>
                         <tbody id="resultsBody">
@@ -528,9 +529,14 @@
                 // Try both field names since backend sets both
                 const stockPrice = option.current_stock_price || option.current_price;
                 
+                // Calculate difference between stock price and strike
+                const diff = stockPrice && option.strike ? (stockPrice - option.strike).toFixed(2) : 'N/A';
+                const diffColor = diff !== 'N/A' ? (parseFloat(diff) >= 0 ? 'text-success' : 'text-danger') : '';
+                
                 row.innerHTML = `
                     <td>${option.symbol}</td>
                     <td>$${stockPrice ? stockPrice.toFixed(2) : 'N/A'}</td>
+                    <td class="${diffColor}">${diff !== 'N/A' ? '$' + diff : 'N/A'}</td>
                     <td>${option.expiration}</td>
                     <td>$${option.strike}</td>
                     <td><span class="badge ${option.type === 'CALL' ? 'bg-success' : 'bg-danger'}">${option.type}</span></td>

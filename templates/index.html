@@ -369,32 +369,72 @@
                 <div id="summaryCards" class="summary-cards"></div>
                 
                 
-                <div class="table-responsive">
-                    <table id="resultsTable" class="table table-hover options-table">
-                        <thead>
-                            <tr>
-                                <th style="cursor: pointer;" onclick="sortTable(0)">Symbol <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(1)">Stock Price <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(2)">Diff <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(3)">Exp <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(4)">Strike <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(5)">Type <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(6)">Volume <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(7)">OI <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(8)">Bid <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(9)">Ask <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(10)">Last <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(11)">IV <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(12)">Delta <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(13)">Gamma <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(14)">Theta <i class="fas fa-sort"></i></th>
-                                <th style="cursor: pointer;" onclick="sortTable(15)">Rho <i class="fas fa-sort"></i></th>
-                                <th>Paper Trade</th>
-                            </tr>
-                        </thead>
-                        <tbody id="resultsBody">
-                        </tbody>
-                    </table>
+                <!-- Options Above Market Price -->
+                <div class="mb-4">
+                    <h5 class="text-success mb-3">
+                        <i class="fas fa-arrow-up me-2"></i>Options Above Market Price (Out-of-the-Money Calls / In-the-Money Puts)
+                    </h5>
+                    <div class="table-responsive">
+                        <table id="aboveMarketTable" class="table table-hover options-table" style="background: rgba(34, 197, 94, 0.05); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.3);">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(0, 'above')">Symbol <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(1, 'above')">Stock Price <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(2, 'above')">Diff <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(3, 'above')">Exp <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(4, 'above')">Strike <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(5, 'above')">Type <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(6, 'above')">Volume <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(7, 'above')">OI <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(8, 'above')">Bid <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(9, 'above')">Ask <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(10, 'above')">Last <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(11, 'above')">IV <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(12, 'above')">Delta <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(13, 'above')">Gamma <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(14, 'above')">Theta <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(15, 'above')">Rho <i class="fas fa-sort"></i></th>
+                                    <th style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;">Paper Trade</th>
+                                </tr>
+                            </thead>
+                            <tbody id="aboveMarketBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Options Below Market Price -->
+                <div class="mb-4">
+                    <h5 class="text-danger mb-3">
+                        <i class="fas fa-arrow-down me-2"></i>Options Below Market Price (In-the-Money Calls / Out-of-the-Money Puts)
+                    </h5>
+                    <div class="table-responsive">
+                        <table id="belowMarketTable" class="table table-hover options-table" style="background: rgba(239, 68, 68, 0.05); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3);">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(0, 'below')">Symbol <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(1, 'below')">Stock Price <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(2, 'below')">Diff <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(3, 'below')">Exp <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(4, 'below')">Strike <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(5, 'below')">Type <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(6, 'below')">Volume <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(7, 'below')">OI <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(8, 'below')">Bid <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(9, 'below')">Ask <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(10, 'below')">Last <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(11, 'below')">IV <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(12, 'below')">Delta <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(13, 'below')">Gamma <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(14, 'below')">Theta <i class="fas fa-sort"></i></th>
+                                    <th style="cursor: pointer; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;" onclick="sortTable(15, 'below')">Rho <i class="fas fa-sort"></i></th>
+                                    <th style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 12px 8px; font-weight: 600;">Paper Trade</th>
+                                </tr>
+                            </thead>
+                            <tbody id="belowMarketBody">
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -645,57 +685,101 @@
             // Show initial summary cards
             updateSummaryCards(data.summary.total_options, data.summary.total_volume, data.summary.calls, data.summary.puts);
             
-            // Populate table with options data
-            const tbody = document.getElementById('resultsBody');
-            tbody.innerHTML = '';
+            // Separate options above and below market price
+            const aboveMarketOptions = [];
+            const belowMarketOptions = [];
             
             data.options.forEach(option => {
-                const row = document.createElement('tr');
-                
-                const bidDisplay = option.bid && option.bid > 0 ? `$${option.bid.toFixed(2)}` : 'N/A';
-                const askDisplay = option.ask && option.ask > 0 ? `$${option.ask.toFixed(2)}` : 'N/A';
-                
-                // Try both field names since backend sets both
                 const stockPrice = option.current_stock_price || option.current_price;
-                
-                // Calculate difference between stock price and strike
-                const diff = stockPrice && option.strike ? (stockPrice - option.strike).toFixed(2) : 'N/A';
-                const diffColor = diff !== 'N/A' ? (parseFloat(diff) >= 0 ? 'text-success' : 'text-danger') : '';
-                
-                row.innerHTML = `
-                    <td>${option.symbol}</td>
-                    <td>$${stockPrice ? stockPrice.toFixed(2) : 'N/A'}</td>
-                    <td class="${diffColor}">${diff !== 'N/A' ? '$' + diff : 'N/A'}</td>
-                    <td>${option.expiration}</td>
-                    <td>$${option.strike}</td>
-                    <td><span class="badge ${option.type === 'CALL' ? 'bg-success' : 'bg-danger'}">${option.type}</span></td>
-                    <td>${option.volume ? option.volume.toLocaleString() : '0'}</td>
-                    <td>${option.openInterest ? option.openInterest.toLocaleString() : '0'}</td>
-                    <td>${bidDisplay}</td>
-                    <td>${askDisplay}</td>
-                    <td>$${option.lastPrice ? option.lastPrice.toFixed(2) : '0.00'}</td>
-                    <td>${option.impliedVolatility ? (option.impliedVolatility * 100).toFixed(1) + '%' : '0.0%'}</td>
-                    <td>${option.delta ? option.delta.toFixed(3) : '0.000'}</td>
-                    <td>${option.gamma ? option.gamma.toFixed(3) : '0.000'}</td>
-                    <td>${option.theta ? option.theta.toFixed(3) : '0.000'}</td>
-                    <td>${option.rho ? option.rho.toFixed(3) : '0.000'}</td>
-                    <td>
-                        <button class="btn btn-success btn-sm me-1" onclick="paperTrade('${option.symbol}', '${option.strike}', '${option.expiration}', '${option.type}', 'BUY', ${option.ask || option.lastPrice || 0})">
-                            <i class="fas fa-plus"></i> Buy
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="paperTrade('${option.symbol}', '${option.strike}', '${option.expiration}', '${option.type}', 'SELL', ${option.bid || option.lastPrice || 0})">
-                            <i class="fas fa-minus"></i> Sell
-                        </button>
-                    </td>
-                `;
-                
-                tbody.appendChild(row);
+                if (stockPrice && option.strike) {
+                    if (option.strike > stockPrice) {
+                        aboveMarketOptions.push(option);
+                    } else {
+                        belowMarketOptions.push(option);
+                    }
+                }
             });
+            
+            // Populate above market table
+            const aboveMarketBody = document.getElementById('aboveMarketBody');
+            aboveMarketBody.innerHTML = '';
+            
+            aboveMarketOptions.forEach(option => {
+                const row = createOptionRow(option);
+                row.classList.add('above-market-row');
+                aboveMarketBody.appendChild(row);
+            });
+            
+            // Populate below market table
+            const belowMarketBody = document.getElementById('belowMarketBody');
+            belowMarketBody.innerHTML = '';
+            
+            belowMarketOptions.forEach(option => {
+                const row = createOptionRow(option);
+                row.classList.add('below-market-row');
+                belowMarketBody.appendChild(row);
+            });
+            
+            // Show empty state if no options in a category
+            if (aboveMarketOptions.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = '<td colspan="17" class="text-center text-muted py-4">No options above market price found</td>';
+                aboveMarketBody.appendChild(emptyRow);
+            }
+            
+            if (belowMarketOptions.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = '<td colspan="17" class="text-center text-muted py-4">No options below market price found</td>';
+                belowMarketBody.appendChild(emptyRow);
+            }
             
             // Create charts
             createVolumeChart(data);
             
             resetButton();
+        }
+
+        function createOptionRow(option) {
+            const row = document.createElement('tr');
+            
+            const bidDisplay = option.bid && option.bid > 0 ? `$${option.bid.toFixed(2)}` : 'N/A';
+            const askDisplay = option.ask && option.ask > 0 ? `$${option.ask.toFixed(2)}` : 'N/A';
+            
+            // Try both field names since backend sets both
+            const stockPrice = option.current_stock_price || option.current_price;
+            
+            // Calculate difference between stock price and strike
+            const diff = stockPrice && option.strike ? (stockPrice - option.strike).toFixed(2) : 'N/A';
+            const diffColor = diff !== 'N/A' ? (parseFloat(diff) >= 0 ? 'text-success' : 'text-danger') : '';
+            
+            row.innerHTML = `
+                <td>${option.symbol}</td>
+                <td>$${stockPrice ? stockPrice.toFixed(2) : 'N/A'}</td>
+                <td class="${diffColor}">${diff !== 'N/A' ? '$' + diff : 'N/A'}</td>
+                <td>${option.expiration}</td>
+                <td>$${option.strike}</td>
+                <td><span class="badge ${option.type === 'CALL' ? 'bg-success' : 'bg-danger'}">${option.type}</span></td>
+                <td>${option.volume ? option.volume.toLocaleString() : '0'}</td>
+                <td>${option.openInterest ? option.openInterest.toLocaleString() : '0'}</td>
+                <td>${bidDisplay}</td>
+                <td>${askDisplay}</td>
+                <td>$${option.lastPrice ? option.lastPrice.toFixed(2) : '0.00'}</td>
+                <td>${option.impliedVolatility ? (option.impliedVolatility * 100).toFixed(1) + '%' : '0.0%'}</td>
+                <td>${option.delta ? option.delta.toFixed(3) : '0.000'}</td>
+                <td>${option.gamma ? option.gamma.toFixed(3) : '0.000'}</td>
+                <td>${option.theta ? option.theta.toFixed(3) : '0.000'}</td>
+                <td>${option.rho ? option.rho.toFixed(3) : '0.000'}</td>
+                <td>
+                    <button class="btn btn-success btn-sm me-1" onclick="paperTrade('${option.symbol}', '${option.strike}', '${option.expiration}', '${option.type}', 'BUY', ${option.ask || option.lastPrice || 0})">
+                        <i class="fas fa-plus"></i> Buy
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="paperTrade('${option.symbol}', '${option.strike}', '${option.expiration}', '${option.type}', 'SELL', ${option.bid || option.lastPrice || 0})">
+                        <i class="fas fa-minus"></i> Sell
+                    </button>
+                </td>
+            `;
+            
+            return row;
         }
 
         function resetButton() {

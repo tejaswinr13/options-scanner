@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Stock Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Seamless Stock Scroller */
+        .watchlist-scroller {
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 2px solid #00ff00;
+            height: 80px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .scroller-content {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            animation: scroll-seamless 45s linear infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes scroll-seamless {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .stock-item {
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 200px;
+            padding: 10px 20px;
+            margin-right: 20px;
+            background: rgba(0, 255, 0, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid #00ff00;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .stock-item:hover {
+            background: rgba(0, 255, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        .stock-symbol {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #00ff00;
+            margin-bottom: 2px;
+        }
+
+        .stock-price {
+            font-size: 0.9rem;
+            color: #ffffff;
+        }
+
+        .stock-change {
+            font-size: 0.8rem;
+        }
+
+        .stock-change.positive {
+            color: #00ff00;
+        }
+
+        .stock-change.negative {
+            color: #ff4444;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 0 20px;
+        }
+
+        .section-title {
+            color: #00ff00;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+
+        /* Tiles Grid */
+        .tiles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .tile {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .tile:hover {
+            background: rgba(0, 255, 0, 0.1);
+            border-color: #00ff00;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 255, 0, 0.2);
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .tile-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #00ff00;
+        }
+
+        .tile-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+
+        .tile-description {
+            font-size: 0.9rem;
+            color: #cccccc;
+        }
+
+        /* X (Twitter) specific styling */
+        .x-tile {
+            border-left: 4px solid #1DA1F2;
+        }
+
+        .x-tile .tile-icon {
+            color: #1DA1F2;
+        }
+
+        /* StockTwits specific styling */
+        .stocktwits-tile {
+            border-left: 4px solid #ff6600;
+        }
+
+        .stocktwits-tile .tile-icon {
+            color: #ff6600;
+        }
+
+        /* URL Generator specific styling */
+        .url-generator-tile {
+            border-left: 4px solid #ffaa00;
+        }
+
+        .url-generator-tile .tile-icon {
+            color: #ffaa00;
+        }
+
+        /* Market Events specific styling */
+        .market-events-tile {
+            border-left: 4px solid #9d4edd;
+        }
+
+        .market-events-tile .tile-icon {
+            color: #9d4edd;
+        }
+
+        /* YouTube specific styling */
+        .youtube-tile {
+            border-left: 4px solid #ff0000;
+        }
+
+        .youtube-tile .tile-icon {
+            color: #ff0000;
+        }
+
+        /* Stock Price Tiles */
+        .stock-price-tile {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #333;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stock-price-tile:hover {
+            border-color: #00ff00;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.2);
+        }
+
+        .stock-price-tile.positive {
+            border-left: 5px solid #00ff00;
+        }
+
+        .stock-price-tile.negative {
+            border-left: 5px solid #ff4444;
+        }
+
+        .stock-symbol-large {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+
+        .stock-price-large {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .stock-change-large {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .stock-change-large.positive {
+            color: #00ff00;
+        }
+
+        .stock-change-large.negative {
+            color: #ff4444;
+        }
+
+        .stock-indicators-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stock-indicator-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 8px;
+        }
+
+        .indicator-label-small {
+            font-size: 0.7rem;
+            color: #888;
+            margin-bottom: 3px;
+        }
+
+        .indicator-value-small {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .vwap-value {
+            color: #00aaff;
+        }
+
+        .rsi-value.oversold {
+            color: #ff4444;
+        }
+
+        .rsi-value.overbought {
+            color: #ffaa00;
+        }
+
+        .rsi-value.neutral {
+            color: #00ff00;
+        }
+
+        .volume-value {
+            color: #cccccc;
+        }
+
+        .earnings-value.earnings-today {
+            color: #ff0000;
+            animation: blink 1s infinite;
+        }
+
+        .earnings-value.earnings-soon {
+            color: #ffaa00;
+        }
+
+        .earnings-value.earnings-far {
+            color: #00ff00;
+        }
+
+        .earnings-value.earnings-indicator {
+            color: #888;
+        }
+
+        .empty-stock-tiles {
+            text-align: center;
+            color: #888;
+            font-style: italic;
+            padding: 40px;
+            border: 2px dashed #333;
+            border-radius: 10px;
+        }
+
+        /* Stock Ticker Input */
+        .ticker-input-section {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .ticker-input {
+            background: #222;
+            border: 2px solid #555;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            margin-right: 10px;
+            width: 200px;
+        }
+
+        .ticker-input:focus {
+            outline: none;
+            border-color: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .generate-btn {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .generate-btn:hover {
+            background: #00cc00;
+            transform: scale(1.05);
+        }
+
+        /* Watchlist Management */
+        .watchlist-management {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .watchlist-input-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .watchlist-input {
+            background: #222;
+            border: 2px solid #555;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            width: 200px;
+        }
+
+        .watchlist-input:focus {
+            outline: none;
+            border-color: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .add-btn {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-btn:hover {
+            background: #00cc00;
+            transform: scale(1.05);
+        }
+
+        .watchlist-tags {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .watchlist-tag {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .watchlist-tag:hover {
+            background: rgba(0, 255, 0, 0.2);
+        }
+
+        .remove-symbol {
+            color: #ff4444;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .remove-symbol:hover {
+            color: #ff0000;
+            transform: scale(1.2);
+        }
+
+        .empty-watchlist {
+            color: #888;
+            font-style: italic;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .tiles-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stock-item {
+                min-width: 150px;
+            }
+            
+            .ticker-input, .watchlist-input {
+                width: 150px;
+                margin-bottom: 10px;
+            }
+
+            .watchlist-input-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Seamless Stock Scroller -->
+    <div class="watchlist-scroller">
+        <div class="scroller-content" id="scrollerContent">
+            <!-- Stock items will be populated here -->
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Watchlist Management Section -->
+        <div class="watchlist-management">
+            <h4 style="color: #00ff00; margin-bottom: 20px;">
+                <i class="fas fa-list"></i> Manage Your Watchlist
+            </h4>
+            <div class="watchlist-input-group">
+                <input type="text" id="watchlistInput" class="watchlist-input" placeholder="Enter stock symbol (e.g., AAPL)" maxlength="10">
+                <button class="add-btn" onclick="addToWatchlist()">
+                    <i class="fas fa-plus"></i> Add Stock
+                </button>
+            </div>
+            <div class="watchlist-tags" id="watchlistTags">
+                <!-- Watchlist symbols will be displayed here -->
+            </div>
+        </div>
+
+        <!-- Market Events & Resources Section -->
+        <div class="section-title">
+            <i class="fas fa-calendar-alt"></i> Market Events & Resources
+        </div>
+        <div class="tiles-grid">
+            <a href="#" onclick="alert('Micro Events - Feature coming soon!')" class="tile market-events-tile">
+                <div class="tile-icon">
+                    <i class="fas fa-microscope"></i>
+                </div>
+                <div class="tile-title">Micro Events</div>
+                <div class="tile-description">Company-specific events and catalysts</div>
+            </a>
+            
+            <a href="#" onclick="alert('Macro Events - Feature coming soon!')" class="tile market-events-tile">
+                <div class="tile-icon">
+                    <i class="fas fa-globe-americas"></i>
+                </div>
+                <div class="tile-title">Macro Events</div>
+                <div class="tile-description">Economic indicators and market events</div>
+            </a>
+            
+            <a href="#" onclick="alert('Earnings Calendar - Feature coming soon!')" class="tile market-events-tile">
+                <div class="tile-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="tile-title">ERs Calendar</div>
+                <div class="tile-description">Upcoming earnings reports</div>
+            </a>
+            
+            <a href="https://www.youtube.com/@TraderTVLive" target="_blank" class="tile youtube-tile">
+                <div class="tile-icon">
+                    <i class="fab fa-youtube"></i>
+                </div>
+                <div class="tile-title">TraderTV Live</div>
+                <div class="tile-description">Live trading analysis and market commentary</div>
+            </a>
+        </div>
+
+        <!-- X (Twitter) Links Section -->
+        <div class="section-title">
+            <i class="fab fa-x-twitter"></i> X (Twitter) Links
+        </div>
+        <div class="tiles-grid">
+            <a href="https://x.com/StockSavvyShay" target="_blank" class="tile x-tile">
+                <div class="tile-icon">
+                    <i class="fab fa-x-twitter"></i>
+                </div>
+                <div class="tile-title">StockSavvyShay</div>
+                <div class="tile-description">Stock market insights and analysis</div>
+            </a>
+            
+            <a href="https://x.com/StockMKTNewz" target="_blank" class="tile x-tile">
+                <div class="tile-icon">
+                    <i class="fab fa-x-twitter"></i>
+                </div>
+                <div class="tile-title">StockMKTNewz</div>
+                <div class="tile-description">Latest stock market news</div>
+            </a>
+            
+            <a href="https://x.com/_BNG_Capital" target="_blank" class="tile x-tile">
+                <div class="tile-icon">
+                    <i class="fab fa-x-twitter"></i>
+                </div>
+                <div class="tile-title">BNG Capital</div>
+                <div class="tile-description">Capital market insights</div>
+            </a>
+            
+            <a href="https://x.com/InsiderFinancex" target="_blank" class="tile x-tile">
+                <div class="tile-icon">
+                    <i class="fab fa-x-twitter"></i>
+                </div>
+                <div class="tile-title">InsiderFinancex</div>
+                <div class="tile-description">Insider financial information</div>
+            </a>
+        </div>
+
+        <!-- StockTwits Links Section -->
+        <div class="section-title">
+            <i class="fas fa-chart-line"></i> StockTwits Links
+        </div>
+        <div class="tiles-grid">
+            <a href="https://stocktwits.com/QuantInsider" target="_blank" class="tile stocktwits-tile">
+                <div class="tile-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="tile-title">QuantInsider</div>
+                <div class="tile-description">Quantitative trading insights</div>
+            </a>
+            
+            <a href="https://stocktwits.com/OptionRunners" target="_blank" class="tile stocktwits-tile">
+                <div class="tile-icon">
+                    <i class="fas fa-running"></i>
+                </div>
+                <div class="tile-title">OptionRunners</div>
+                <div class="tile-description">Options trading strategies</div>
+            </a>
+            
+            <a href="https://stocktwits.com/WaIIStreetBuyDip" target="_blank" class="tile stocktwits-tile">
+                <div class="tile-icon">
+                    <i class="fas fa-arrow-trend-down"></i>
+                </div>
+                <div class="tile-title">WallStreetBuyDip</div>
+                <div class="tile-description">Dip buying strategies</div>
+            </a>
+            
+            <a href="https://stocktwits.com/sentiment" target="_blank" class="tile stocktwits-tile">
+                <div class="tile-icon">
+                    <i class="fas fa-heart-pulse"></i>
+                </div>
+                <div class="tile-title">Sentiment</div>
+                <div class="tile-description">Market sentiment analysis</div>
+            </a>
+        </div>
+
+        <!-- Stock Ticker URL Generators Section -->
+        <div class="section-title">
+            <i class="fas fa-link"></i> Stock Ticker URL Generators
+        </div>
+        
+        <div class="ticker-input-section">
+            <input type="text" id="tickerInput" class="ticker-input" placeholder="Enter Stock Ticker (e.g., AAPL)" maxlength="10">
+            <button class="generate-btn" onclick="generateUrls()">Generate Links</button>
+        </div>
+
+        <div class="tiles-grid" id="urlGeneratorTiles">
+            <div class="tile url-generator-tile" onclick="openTradingView()">
+                <div class="tile-icon">
+                    <i class="fas fa-chart-candlestick"></i>
+                </div>
+                <div class="tile-title">TradingView</div>
+                <div class="tile-description">Advanced charting and analysis</div>
+            </div>
+            
+            <div class="tile url-generator-tile" onclick="openStockTwits()">
+                <div class="tile-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="tile-title">StockTwits</div>
+                <div class="tile-description">Social sentiment and discussions</div>
+            </div>
+            
+            <div class="tile url-generator-tile" onclick="openRobinhood()">
+                <div class="tile-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <div class="tile-title">Robinhood</div>
+                <div class="tile-description">Trading platform</div>
+            </div>
+        </div>
+
+        <!-- Stock Price Display Tiles Section -->
+        <div class="section-title">
+            <i class="fas fa-chart-area"></i> Stock Price Tiles
+        </div>
+        <div class="tiles-grid" id="stockPriceTiles">
+            <!-- Stock price tiles will be populated here -->
+        </div>
+    </div>
+
+    <script>
+        let stockData = {};
+        let watchlist = JSON.parse(localStorage.getItem('dashboardWatchlist')) || [];
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            updateWatchlistDisplay();
+            if (watchlist.length > 0) {
+                fetchStockData();
+                if (!updateInterval) {
+                    updateInterval = setInterval(fetchStockData, 30000); // Update every 30 seconds
+                }
+            } else {
+                showEmptyWatchlist();
+                updateStockPriceTiles(); // Show empty state for tiles too
+            }
+        });
+
+        function fetchStockData() {
+            fetch('/api/ticker-prices', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ symbols: watchlist })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.stocks) {
+                    stockData = data.stocks;
+                    updateScroller();
+                    updateStockPriceTiles();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock data:', error);
+            });
+        }
+
+        function showEmptyWatchlist() {
+            const content = document.getElementById('scrollerContent');
+            content.innerHTML = '<div class="empty-watchlist">Add stocks to your watchlist to see real-time prices here</div>';
+        }
+
+        function updateScroller() {
+            const content = document.getElementById('scrollerContent');
+            content.innerHTML = '';
+            
+            if (watchlist.length === 0) {
+                showEmptyWatchlist();
+                return;
+            }
+
+            // Create stock items array for seamless looping
+            const stockItems = [];
+
+            // Only process stocks that are in our watchlist and have data
+            watchlist.forEach(symbol => {
+                if (stockData[symbol]) {
+                    const data = stockData[symbol];
+                    const item = document.createElement('div');
+                    item.className = 'stock-item';
+                    item.onclick = () => openTradingViewForSymbol(symbol);
+                    
+                    const price = data.price || 0;
+                    const change = data.change || 0;
+                    const changePercent = data.changePercent || 0;
+                    
+                    const changeClass = change >= 0 ? 'positive' : 'negative';
+                    const changeSign = change >= 0 ? '+' : '';
+
+                    item.innerHTML = `
+                        <div class="stock-symbol">${symbol}</div>
+                        <div class="stock-price">$${price.toFixed(2)}</div>
+                        <div class="stock-change ${changeClass}">
+                            ${changeSign}${change.toFixed(2)} (${changePercent.toFixed(2)}%)
+                        </div>
+                    `;
+
+                    stockItems.push(item);
+                }
+            });
+
+            // Add items to content container
+            stockItems.forEach(item => content.appendChild(item));
+
+            // Create duplicate set for seamless infinite scrolling only if we have items
+            if (stockItems.length > 0) {
+                stockItems.forEach(item => {
+                    const clone = item.cloneNode(true);
+                    content.appendChild(clone);
+                });
+            }
+
+            // Reset animation to ensure smooth scrolling
+            content.style.animation = 'none';
+            content.offsetHeight; // Trigger reflow
+            content.style.animation = null;
+        }
+
+        function updateStockPriceTiles() {
+            const container = document.getElementById('stockPriceTiles');
+            container.innerHTML = '';
+            
+            if (watchlist.length === 0) {
+                container.innerHTML = '<div class="empty-stock-tiles">Add stocks to your watchlist to see detailed price tiles here</div>';
+                return;
+            }
+
+            watchlist.forEach(symbol => {
+                if (stockData[symbol]) {
+                    const data = stockData[symbol];
+                    const tile = document.createElement('div');
+                    
+                    const price = data.price || 0;
+                    const change = data.change || 0;
+                    const changePercent = data.changePercent || 0;
+                    const vwap = data.vwap || 0;
+                    const rsi = data.rsi || 50;
+                    const volume = data.volume || 0;
+                    const earningsDisplay = data.earningsDisplay || 'N/A';
+                    
+                    const changeClass = change >= 0 ? 'positive' : 'negative';
+                    const changeSign = change >= 0 ? '+' : '';
+                    
+                    let rsiClass = 'neutral';
+                    if (rsi < 30) rsiClass = 'oversold';
+                    else if (rsi > 70) rsiClass = 'overbought';
+
+                    let earningsClass = 'earnings-indicator';
+                    if (earningsDisplay === 'erTODAY') {
+                        earningsClass = 'earnings-today';
+                    } else if (data.daysToEarnings !== null && data.daysToEarnings <= 7) {
+                        earningsClass = 'earnings-soon';
+                    } else if (data.daysToEarnings !== null && data.daysToEarnings > 7) {
+                        earningsClass = 'earnings-far';
+                    }
+
+                    const volumeFormatted = formatVolume(volume);
+                    
+                    tile.className = `stock-price-tile ${changeClass}`;
+                    tile.onclick = () => openTradingViewForSymbol(symbol);
+                    
+                    tile.innerHTML = `
+                        <div class="stock-symbol-large">${symbol}</div>
+                        <div class="stock-price-large">$${price.toFixed(2)}</div>
+                        <div class="stock-change-large ${changeClass}">
+                            ${changeSign}${change.toFixed(2)} (${changePercent.toFixed(2)}%)
+                        </div>
+                        <div class="stock-indicators-grid">
+                            <div class="stock-indicator-item">
+                                <div class="indicator-label-small">VWAP</div>
+                                <div class="indicator-value-small vwap-value">$${vwap.toFixed(2)}</div>
+                            </div>
+                            <div class="stock-indicator-item">
+                                <div class="indicator-label-small">RSI</div>
+                                <div class="indicator-value-small rsi-value ${rsiClass}">${rsi.toFixed(1)}</div>
+                            </div>
+                            <div class="stock-indicator-item">
+                                <div class="indicator-label-small">VOLUME</div>
+                                <div class="indicator-value-small volume-value">${volumeFormatted}</div>
+                            </div>
+                            <div class="stock-indicator-item">
+                                <div class="indicator-label-small">EARNINGS</div>
+                                <div class="indicator-value-small earnings-value ${earningsClass}">${earningsDisplay}</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.appendChild(tile);
+                }
+            });
+        }
+
+        function formatVolume(volume) {
+            if (volume >= 1000000) {
+                return (volume / 1000000).toFixed(1) + 'M';
+            } else if (volume >= 1000) {
+                return (volume / 1000).toFixed(1) + 'K';
+            }
+            return volume.toString();
+        }
+
+        let updateInterval = null;
+
+        function addToWatchlist() {
+            const input = document.getElementById('watchlistInput');
+            const symbol = input.value.toUpperCase().trim();
+            
+            if (!symbol) return;
+            
+            if (watchlist.includes(symbol)) {
+                alert('Stock already in watchlist!');
+                input.value = '';
+                return;
+            }
+            
+            watchlist.push(symbol);
+            localStorage.setItem('dashboardWatchlist', JSON.stringify(watchlist));
+            updateWatchlistDisplay();
+            input.value = '';
+            
+            // Start fetching data if this is the first stock
+            if (watchlist.length === 1 && !updateInterval) {
+                fetchStockData();
+                updateInterval = setInterval(fetchStockData, 30000);
+            } else {
+                fetchStockData();
+            }
+        }
+
+        function removeFromWatchlist(symbol) {
+            watchlist = watchlist.filter(s => s !== symbol);
+            localStorage.setItem('dashboardWatchlist', JSON.stringify(watchlist));
+            updateWatchlistDisplay();
+            
+            if (watchlist.length === 0) {
+                showEmptyWatchlist();
+                if (updateInterval) {
+                    clearInterval(updateInterval);
+                    updateInterval = null;
+                }
+            } else {
+                fetchStockData();
+            }
+        }
+
+        function updateWatchlistDisplay() {
+            const container = document.getElementById('watchlistTags');
+            container.innerHTML = '';
+            
+            if (watchlist.length === 0) {
+                container.innerHTML = '<div class="empty-watchlist">No stocks in watchlist. Add some above!</div>';
+                return;
+            }
+            
+            watchlist.forEach(symbol => {
+                const tag = document.createElement('div');
+                tag.className = 'watchlist-tag';
+                tag.innerHTML = `
+                    ${symbol}
+                    <span class="remove-symbol" onclick="removeFromWatchlist('${symbol}')">&times;</span>
+                `;
+                container.appendChild(tag);
+            });
+        }
+
+        function openTradingViewForSymbol(symbol) {
+            window.open(`https://www.tradingview.com/symbols/NASDAQ-${symbol}/`, '_blank');
+        }
+
+        function generateUrls() {
+            const ticker = document.getElementById('tickerInput').value.toUpperCase().trim();
+            if (!ticker) {
+                alert('Please enter a stock ticker symbol');
+                return;
+            }
+            
+            // Update the onclick functions with the current ticker
+            document.querySelector('.url-generator-tile:nth-child(1)').onclick = () => openTradingView(ticker);
+            document.querySelector('.url-generator-tile:nth-child(2)').onclick = () => openStockTwits(ticker);
+            document.querySelector('.url-generator-tile:nth-child(3)').onclick = () => openRobinhood(ticker);
+            
+            // Visual feedback
+            document.querySelectorAll('.url-generator-tile').forEach(tile => {
+                tile.style.borderColor = '#00ff00';
+                tile.style.boxShadow = '0 0 15px rgba(0, 255, 0, 0.3)';
+                setTimeout(() => {
+                    tile.style.borderColor = '#ffaa00';
+                    tile.style.boxShadow = 'none';
+                }, 2000);
+            });
+        }
+
+        function openTradingView(ticker = null) {
+            const symbol = ticker || document.getElementById('tickerInput').value.toUpperCase().trim();
+            if (!symbol) {
+                alert('Please enter a stock ticker symbol first');
+                return;
+            }
+            window.open(`https://www.tradingview.com/symbols/NASDAQ-${symbol}/`, '_blank');
+        }
+
+        function openStockTwits(ticker = null) {
+            const symbol = ticker || document.getElementById('tickerInput').value.toUpperCase().trim();
+            if (!symbol) {
+                alert('Please enter a stock ticker symbol first');
+                return;
+            }
+            window.open(`https://stocktwits.com/symbol/${symbol}`, '_blank');
+        }
+
+        function openRobinhood(ticker = null) {
+            const symbol = ticker || document.getElementById('tickerInput').value.toUpperCase().trim();
+            if (!symbol) {
+                alert('Please enter a stock ticker symbol first');
+                return;
+            }
+            window.open(`https://robinhood.com/stocks/${symbol}`, '_blank');
+        }
+
+        // Handle Enter key in ticker input
+        document.getElementById('tickerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generateUrls();
+            }
+        });
+
+        // Handle Enter key in watchlist input
+        document.getElementById('watchlistInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addToWatchlist();
+            }
+        });
+    </script>
+</body>
+</html>

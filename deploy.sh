@@ -72,18 +72,25 @@ sudo apt update
 sudo apt install -y build-essential wget
 
 # Install TA-Lib C library
+print_status "Installing TA-Lib C library (required for technical analysis)"
 print_status "Installing TA-Lib C library..."
-if [ ! -f "/usr/local/lib/libta_lib.a" ]; then
-    cd /tmp
-    wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
-    tar -xzf ta-lib-0.4.0-src.tar.gz
-    cd ta-lib/
-    ./configure --prefix=/usr/local
-    make
-    sudo make install
-    sudo ldconfig
-    cd "$PROJECT_DIR"
-fi
+cd /tmp
+wget -q http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
+tar -xzf ta-lib-0.4.0-src.tar.gz
+cd ta-lib/
+./configure --prefix=/usr/local --quiet
+make --quiet
+sudo make install --quiet
+sudo ldconfig
+cd "$PROJECT_DIR"
+
+# Install compatible NumPy first to avoid TA-Lib compilation issues
+print_status "Installing compatible NumPy version..."
+pip install "numpy<1.25.0"
+
+# Install TA-Lib Python wrapper separately with specific version
+print_status "Installing TA-Lib Python wrapper..."
+pip install --no-cache-dir TA-Lib==0.4.24
 
 # Check if virtual environment exists
 if [ ! -d "$VENV_PATH" ]; then

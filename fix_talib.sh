@@ -20,9 +20,13 @@ sudo ldconfig
 
 echo "✅ TA-Lib C library installed successfully!"
 
-# Now install the Python wrapper
+# Install compatible NumPy first
+echo "🐍 Installing compatible NumPy version..."
+pip install "numpy<1.25.0"
+
+# Now install the Python wrapper with specific version
 echo "🐍 Installing TA-Lib Python wrapper..."
-pip install TA-Lib
+pip install --no-cache-dir TA-Lib==0.4.24
 
 echo "🎉 TA-Lib installation complete!"
 echo "You can now run your requirements.txt installation."

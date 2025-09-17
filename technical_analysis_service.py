@@ -10,7 +10,7 @@ import numpy as np
 from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
-import pandas_ta as ta
+# Using pure pandas/numpy for technical analysis
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
@@ -70,80 +70,41 @@ class TechnicalAnalysisService:
             indicators = {}
             
             # Moving Averages
-            sma_20 = ta.sma(close, length=20)
-            indicators['sma_20'] = float(sma_20.iloc[-1]) if sma_20 is not None and len(sma_20.dropna()) > 0 else None
-            sma_50 = ta.sma(close, length=50)
-            indicators['sma_50'] = float(sma_50.iloc[-1]) if sma_50 is not None and len(sma_50.dropna()) > 0 else None
-            sma_200 = ta.sma(close, length=200)
-            indicators['sma_200'] = float(sma_200.iloc[-1]) if sma_200 is not None and len(sma_200.dropna()) > 0 else None
-            ema_12 = ta.ema(close, length=12)
-            indicators['ema_12'] = float(ema_12.iloc[-1]) if ema_12 is not None and len(ema_12.dropna()) > 0 else None
-            ema_26 = ta.ema(close, length=26)
-            indicators['ema_26'] = float(ema_26.iloc[-1]) if ema_26 is not None and len(ema_26.dropna()) > 0 else None
+            indicators['sma_20'] = float(close.rolling(window=20).mean().iloc[-1]) if len(close) >= 20 else None
+            indicators['sma_50'] = float(close.rolling(window=50).mean().iloc[-1]) if len(close) >= 50 else None
+            indicators['sma_200'] = float(close.rolling(window=200).mean().iloc[-1]) if len(close) >= 200 else None
+            indicators['ema_12'] = float(close.ewm(span=12).mean().iloc[-1]) if len(close) >= 12 else None
+            indicators['ema_26'] = float(close.ewm(span=26).mean().iloc[-1]) if len(close) >= 26 else None
             
-            # Oscillators
-            rsi = ta.rsi(close, length=14)
-            indicators['rsi'] = float(rsi.iloc[-1]) if rsi is not None and len(rsi.dropna()) > 0 else None
+            # RSI
+            indicators['rsi'] = self._calculate_rsi(close) if len(close) >= 14 else None
             
-            try:
-                stoch = ta.stoch(high, low, close)
-                if stoch is not None and not stoch.empty:
-                    indicators['stoch_k'] = float(stoch['STOCHk_14_3_3'].iloc[-1]) if 'STOCHk_14_3_3' in stoch.columns else None
-                    indicators['stoch_d'] = float(stoch['STOCHd_14_3_3'].iloc[-1]) if 'STOCHd_14_3_3' in stoch.columns else None
-                else:
-                    indicators['stoch_k'] = None
-                    indicators['stoch_d'] = None
-            except:
-                indicators['stoch_k'] = None
-                indicators['stoch_d'] = None
+            # Stochastic
+            stoch_k, stoch_d = self._calculate_stochastic(high, low, close)
+            indicators['stoch_k'] = stoch_k
+            indicators['stoch_d'] = stoch_d
             
             # MACD
-            try:
-                macd = ta.macd(close)
-                if macd is not None and not macd.empty:
-                    indicators['macd'] = float(macd['MACD_12_26_9'].iloc[-1]) if 'MACD_12_26_9' in macd.columns else None
-                    indicators['macd_signal'] = float(macd['MACDs_12_26_9'].iloc[-1]) if 'MACDs_12_26_9' in macd.columns else None
-                    indicators['macd_histogram'] = float(macd['MACDh_12_26_9'].iloc[-1]) if 'MACDh_12_26_9' in macd.columns else None
-                else:
-                    indicators['macd'] = None
-                    indicators['macd_signal'] = None
-                    indicators['macd_histogram'] = None
-            except:
-                indicators['macd'] = None
-                indicators['macd_signal'] = None
-                indicators['macd_histogram'] = None
+            macd, macd_signal, macd_hist = self._calculate_macd(close)
+            indicators['macd'] = macd
+            indicators['macd_signal'] = macd_signal
+            indicators['macd_histogram'] = macd_hist
             
             # Bollinger Bands
-            try:
-                bb = ta.bbands(close)
-                if bb is not None and not bb.empty:
-                    indicators['bb_upper'] = float(bb['BBU_5_2.0'].iloc[-1]) if 'BBU_5_2.0' in bb.columns else None
-                    indicators['bb_middle'] = float(bb['BBM_5_2.0'].iloc[-1]) if 'BBM_5_2.0' in bb.columns else None
-                    indicators['bb_lower'] = float(bb['BBL_5_2.0'].iloc[-1]) if 'BBL_5_2.0' in bb.columns else None
-                else:
-                    indicators['bb_upper'] = None
-                    indicators['bb_middle'] = None
-                    indicators['bb_lower'] = None
-            except:
-                indicators['bb_upper'] = None
-                indicators['bb_middle'] = None
-                indicators['bb_lower'] = None
-            
-            indicators['bb_width'] = (indicators['bb_upper'] - indicators['bb_lower']) / indicators['bb_middle'] * 100 if all([indicators['bb_upper'], indicators['bb_lower'], indicators['bb_middle']]) else None
+            bb_upper, bb_middle, bb_lower = self._calculate_bollinger_bands(close)
+            indicators['bb_upper'] = bb_upper
+            indicators['bb_middle'] = bb_middle
+            indicators['bb_lower'] = bb_lower
+            indicators['bb_width'] = (bb_upper - bb_lower) / bb_middle * 100 if all([bb_upper, bb_lower, bb_middle]) else None
             
             # Volume indicators
-            obv = ta.obv(close, volume)
-            indicators['obv'] = float(obv.iloc[-1]) if obv is not None and len(obv.dropna()) > 0 else None
-            ad = ta.ad(high, low, close, volume)
-            indicators['ad_line'] = float(ad.iloc[-1]) if ad is not None and len(ad.dropna()) > 0 else None
+            indicators['obv'] = self._calculate_obv(close, volume)
+            indicators['ad_line'] = self._calculate_ad_line(high, low, close, volume)
             
             # Momentum indicators
-            willr = ta.willr(high, low, close)
-            indicators['williams_r'] = float(willr.iloc[-1]) if willr is not None and len(willr.dropna()) > 0 else None
-            cci = ta.cci(high, low, close)
-            indicators['cci'] = float(cci.iloc[-1]) if cci is not None and len(cci.dropna()) > 0 else None
-            atr = ta.atr(high, low, close)
-            indicators['atr'] = float(atr.iloc[-1]) if atr is not None and len(atr.dropna()) > 0 else None
+            indicators['williams_r'] = self._calculate_williams_r(high, low, close)
+            indicators['cci'] = self._calculate_cci(high, low, close)
+            indicators['atr'] = self._calculate_atr(high, low, close)
             
             # Clean None values and convert numpy types to Python types
             cleaned_indicators = {}
@@ -568,6 +529,108 @@ class TechnicalAnalysisService:
         gap_up = low[-2] > max(open_prices[-3], close[-3])
         gap_down = high[-1] < min(open_prices[-2], close[-2])
         return first_bullish and small_body and third_bearish and gap_up and gap_down
+    
+    def _calculate_rsi(self, close, period=14):
+        """Calculate RSI using pure pandas"""
+        try:
+            delta = close.diff()
+            gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+            rs = gain / loss
+            rsi = 100 - (100 / (1 + rs))
+            return float(rsi.iloc[-1]) if not rsi.empty else None
+        except:
+            return None
+    
+    def _calculate_stochastic(self, high, low, close, k_period=14, d_period=3):
+        """Calculate Stochastic oscillator"""
+        try:
+            lowest_low = low.rolling(window=k_period).min()
+            highest_high = high.rolling(window=k_period).max()
+            k_percent = 100 * ((close - lowest_low) / (highest_high - lowest_low))
+            d_percent = k_percent.rolling(window=d_period).mean()
+            return (float(k_percent.iloc[-1]) if not k_percent.empty else None,
+                    float(d_percent.iloc[-1]) if not d_percent.empty else None)
+        except:
+            return None, None
+    
+    def _calculate_macd(self, close, fast=12, slow=26, signal=9):
+        """Calculate MACD"""
+        try:
+            ema_fast = close.ewm(span=fast).mean()
+            ema_slow = close.ewm(span=slow).mean()
+            macd = ema_fast - ema_slow
+            macd_signal = macd.ewm(span=signal).mean()
+            macd_histogram = macd - macd_signal
+            return (float(macd.iloc[-1]) if not macd.empty else None,
+                    float(macd_signal.iloc[-1]) if not macd_signal.empty else None,
+                    float(macd_histogram.iloc[-1]) if not macd_histogram.empty else None)
+        except:
+            return None, None, None
+    
+    def _calculate_bollinger_bands(self, close, period=20, std_dev=2):
+        """Calculate Bollinger Bands"""
+        try:
+            sma = close.rolling(window=period).mean()
+            std = close.rolling(window=period).std()
+            upper_band = sma + (std * std_dev)
+            lower_band = sma - (std * std_dev)
+            return (float(upper_band.iloc[-1]) if not upper_band.empty else None,
+                    float(sma.iloc[-1]) if not sma.empty else None,
+                    float(lower_band.iloc[-1]) if not lower_band.empty else None)
+        except:
+            return None, None, None
+    
+    def _calculate_obv(self, close, volume):
+        """Calculate On-Balance Volume"""
+        try:
+            obv = (np.sign(close.diff()) * volume).fillna(0).cumsum()
+            return float(obv.iloc[-1]) if not obv.empty else None
+        except:
+            return None
+    
+    def _calculate_ad_line(self, high, low, close, volume):
+        """Calculate Accumulation/Distribution Line"""
+        try:
+            clv = ((close - low) - (high - close)) / (high - low)
+            clv = clv.fillna(0)
+            ad_line = (clv * volume).cumsum()
+            return float(ad_line.iloc[-1]) if not ad_line.empty else None
+        except:
+            return None
+    
+    def _calculate_williams_r(self, high, low, close, period=14):
+        """Calculate Williams %R"""
+        try:
+            highest_high = high.rolling(window=period).max()
+            lowest_low = low.rolling(window=period).min()
+            williams_r = -100 * ((highest_high - close) / (highest_high - lowest_low))
+            return float(williams_r.iloc[-1]) if not williams_r.empty else None
+        except:
+            return None
+    
+    def _calculate_cci(self, high, low, close, period=20):
+        """Calculate Commodity Channel Index"""
+        try:
+            typical_price = (high + low + close) / 3
+            sma = typical_price.rolling(window=period).mean()
+            mean_deviation = typical_price.rolling(window=period).apply(lambda x: np.mean(np.abs(x - x.mean())))
+            cci = (typical_price - sma) / (0.015 * mean_deviation)
+            return float(cci.iloc[-1]) if not cci.empty else None
+        except:
+            return None
+    
+    def _calculate_atr(self, high, low, close, period=14):
+        """Calculate Average True Range"""
+        try:
+            high_low = high - low
+            high_close = np.abs(high - close.shift())
+            low_close = np.abs(low - close.shift())
+            true_range = np.maximum(high_low, np.maximum(high_close, low_close))
+            atr = pd.Series(true_range).rolling(window=period).mean()
+            return float(atr.iloc[-1]) if not atr.empty else None
+        except:
+            return None
 
 # Global instance
 technical_analysis_service = TechnicalAnalysisService()

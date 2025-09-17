@@ -82,9 +82,7 @@ fi
 print_status "Activating virtual environment and updating dependencies..."
 source "$VENV_PATH/bin/activate"
 
-# Install pandas-ta for technical analysis (replaces TA-Lib)
-print_status "Installing pandas-ta for technical analysis..."
-pip install pandas-ta
+# Skip pandas-ta installation - using pure pandas/numpy implementation
 
 # Install/update requirements if requirements.txt exists
 if [ -f "requirements.txt" ]; then

@@ -84,7 +84,7 @@ source "$VENV_PATH/bin/activate"
 
 # Install pandas-ta for technical analysis (replaces TA-Lib)
 print_status "Installing pandas-ta for technical analysis..."
-pip install pandas-ta==0.3.14b0
+pip install pandas-ta
 
 # Install/update requirements if requirements.txt exists
 if [ -f "requirements.txt" ]; then

@@ -541,31 +541,77 @@ class EnhancedStockService:
             stock_data = self.get_stock_data(symbol)
             
             if stock_data and 'error' not in stock_data:
-                # Enhance with additional data for comprehensive view
+                # Flatten the structure to match frontend expectations
+                volume_analytics = self._get_volume_analytics_fallback(symbol)
+                technical_indicators = self._get_technical_indicators_fallback(symbol)
+                
+                # Parse day range and 52-week range
+                day_range = stock_data.get('day_range', '0.00 - 0.00')
+                week_52_range = stock_data.get('week_52_range', '0.00 - 0.00')
+                
+                try:
+                    day_low, day_high = map(float, day_range.replace('$', '').split(' - '))
+                    week_52_low, week_52_high = map(float, week_52_range.replace('$', '').split(' - '))
+                except:
+                    day_low = day_high = week_52_low = week_52_high = 0.0
+                
+                current_price = stock_data.get('price', 0)
+                previous_close = current_price - stock_data.get('change', 0)
+                
                 comprehensive_data = {
                     'symbol': symbol,
-                    'basic_info': stock_data,
-                    'volume_analytics': self._get_volume_analytics_fallback(symbol),
-                    'technical_indicators': self._get_technical_indicators_fallback(symbol),
-                    'price_ranges': {
-                        'day_range': stock_data.get('day_range', 'N/A'),
-                        'week_52_range': stock_data.get('week_52_range', 'N/A')
+                    'name': symbol,
+                    'current_price': current_price,
+                    'previous_close': previous_close,
+                    'sector': 'Technology',  # Mock data
+                    'industry': 'Software',  # Mock data
+                    'market_cap': stock_data.get('market_cap', 'N/A'),
+                    'pe_ratio': stock_data.get('pe_ratio', 0),
+                    'beta': stock_data.get('beta', 0),
+                    'exchange': 'NASDAQ',  # Mock data
+                    'currency': 'USD',
+                    'timezone': 'EST',
+                    'day_low': day_low,
+                    'day_high': day_high,
+                    'fifty_two_week_low': week_52_low,
+                    'fifty_two_week_high': week_52_high,
+                    'day_position_percent': ((current_price - day_low) / (day_high - day_low)) * 100 if day_high > day_low else 50,
+                    'fifty_two_week_position_percent': ((current_price - week_52_low) / (week_52_high - week_52_low)) * 100 if week_52_high > week_52_low else 50,
+                    'volume_analytics': {
+                        'current_volume': stock_data.get('volume', 0),
+                        '5_day_avg': volume_analytics.get('5day_avg', 0),
+                        '10_day_avg': volume_analytics.get('10day_avg', 0),
+                        '15_day_avg': volume_analytics.get('15day_avg', 0),
+                        '30_day_avg': volume_analytics.get('30day_avg', 0),
+                        '3_month_avg': volume_analytics.get('3month_avg', 0),
+                        '6_month_avg': volume_analytics.get('6month_avg', 0),
+                        '1_year_avg': volume_analytics.get('1year_avg', 0),
+                        'volume_trend': 'Neutral',
+                        '30_day_ratio': 1.0
                     },
-                    'market_data': {
-                        'market_cap': stock_data.get('market_cap', 'N/A'),
-                        'pe_ratio': stock_data.get('pe_ratio', 'N/A'),
-                        'dividend_yield': stock_data.get('dividend_yield', 'N/A'),
-                        'beta': stock_data.get('beta', 'N/A')
+                    'technical_indicators': {
+                        'rsi': technical_indicators.get('rsi', 50),
+                        'macd': technical_indicators.get('macd', 0),
+                        'sma_20': technical_indicators.get('sma_20', current_price),
+                        'sma_50': technical_indicators.get('sma_50', current_price),
+                        'vwap': current_price
+                    },
+                    'price_statistics': {
+                        '1_day_performance': stock_data.get('change_percent', 0),
+                        '5_day_performance': 0,
+                        '1_month_performance': 0,
+                        '3_month_performance': 0,
+                        '1_year_performance': 0
                     }
                 }
                 return comprehensive_data
             else:
                 # Return fallback comprehensive data
-                return self._get_comprehensive_fallback_data(symbol)
+                return self._get_comprehensive_fallback_data_flat(symbol)
                 
         except Exception as e:
             self.logger.error(f"Error getting comprehensive data for {symbol}: {e}")
-            return self._get_comprehensive_fallback_data(symbol)
+            return self._get_comprehensive_fallback_data_flat(symbol)
     
     def _get_volume_analytics_fallback(self, symbol):
         """Get fallback volume analytics data"""
@@ -595,41 +641,68 @@ class EnhancedStockService:
             'bollinger_lower': round(random.uniform(60, 90), 2)
         }
     
-    def _get_comprehensive_fallback_data(self, symbol):
-        """Get comprehensive fallback data when all APIs fail"""
+    def _get_comprehensive_fallback_data_flat(self, symbol):
+        """Get comprehensive fallback data when all APIs fail - flattened structure"""
         import random
         
         # Generate realistic mock data
         base_price = random.uniform(20, 200)
         change = random.uniform(-5, 5)
         change_percent = (change / base_price) * 100
+        previous_close = base_price - change
+        
+        day_low = base_price - random.uniform(2, 8)
+        day_high = base_price + random.uniform(2, 8)
+        week_52_low = base_price - random.uniform(10, 50)
+        week_52_high = base_price + random.uniform(10, 80)
+        
+        volume_analytics = self._get_volume_analytics_fallback(symbol)
+        technical_indicators = self._get_technical_indicators_fallback(symbol)
         
         return {
             'symbol': symbol,
-            'basic_info': {
-                'price': round(base_price, 2),
-                'change': round(change, 2),
-                'change_percent': round(change_percent, 2),
-                'volume': random.randint(100000, 5000000),
-                'market_cap': f"${random.randint(1, 100)}B",
-                'pe_ratio': round(random.uniform(10, 40), 1),
-                'dividend_yield': f"{random.uniform(0, 8):.1f}%",
-                'beta': round(random.uniform(0.5, 2.0), 1),
-                'day_range': f"{base_price-5:.2f} - {base_price+5:.2f}",
-                'week_52_range': f"{base_price-20:.2f} - {base_price+30:.2f}",
-                'source': 'Mock Data (APIs unavailable)'
+            'name': symbol,
+            'current_price': round(base_price, 2),
+            'previous_close': round(previous_close, 2),
+            'sector': 'Technology',
+            'industry': 'Software',
+            'market_cap': f"${random.randint(1, 100)}B",
+            'pe_ratio': round(random.uniform(10, 40), 1),
+            'beta': round(random.uniform(0.5, 2.0), 1),
+            'exchange': 'NASDAQ',
+            'currency': 'USD',
+            'timezone': 'EST',
+            'day_low': round(day_low, 2),
+            'day_high': round(day_high, 2),
+            'fifty_two_week_low': round(week_52_low, 2),
+            'fifty_two_week_high': round(week_52_high, 2),
+            'day_position_percent': ((base_price - day_low) / (day_high - day_low)) * 100,
+            'fifty_two_week_position_percent': ((base_price - week_52_low) / (week_52_high - week_52_low)) * 100,
+            'volume_analytics': {
+                'current_volume': random.randint(100000, 5000000),
+                '5_day_avg': volume_analytics.get('5day_avg', 0),
+                '10_day_avg': volume_analytics.get('10day_avg', 0),
+                '15_day_avg': volume_analytics.get('15day_avg', 0),
+                '30_day_avg': volume_analytics.get('30day_avg', 0),
+                '3_month_avg': volume_analytics.get('3month_avg', 0),
+                '6_month_avg': volume_analytics.get('6month_avg', 0),
+                '1_year_avg': volume_analytics.get('1year_avg', 0),
+                'volume_trend': 'Neutral',
+                '30_day_ratio': 1.0
             },
-            'volume_analytics': self._get_volume_analytics_fallback(symbol),
-            'technical_indicators': self._get_technical_indicators_fallback(symbol),
-            'price_ranges': {
-                'day_range': f"{base_price-5:.2f} - {base_price+5:.2f}",
-                'week_52_range': f"{base_price-20:.2f} - {base_price+30:.2f}"
+            'technical_indicators': {
+                'rsi': technical_indicators.get('rsi', 50),
+                'macd': technical_indicators.get('macd', 0),
+                'sma_20': technical_indicators.get('sma_20', base_price),
+                'sma_50': technical_indicators.get('sma_50', base_price),
+                'vwap': round(base_price, 2)
             },
-            'market_data': {
-                'market_cap': f"${random.randint(1, 100)}B",
-                'pe_ratio': round(random.uniform(10, 40), 1),
-                'dividend_yield': f"{random.uniform(0, 8):.1f}%",
-                'beta': round(random.uniform(0.5, 2.0), 1)
+            'price_statistics': {
+                '1_day_performance': round(change_percent, 2),
+                '5_day_performance': round(random.uniform(-10, 10), 2),
+                '1_month_performance': round(random.uniform(-20, 20), 2),
+                '3_month_performance': round(random.uniform(-30, 30), 2),
+                '1_year_performance': round(random.uniform(-50, 100), 2)
             }
         }
 

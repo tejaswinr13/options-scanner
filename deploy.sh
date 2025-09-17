@@ -66,6 +66,25 @@ print_status "Pulling latest code from GitHub..."
 git stash push logs/ -m "Stash log files before deployment"
 git pull origin main
 
+# Install system dependencies for TA-Lib
+print_status "Installing system dependencies..."
+sudo apt update
+sudo apt install -y build-essential wget
+
+# Install TA-Lib C library
+print_status "Installing TA-Lib C library..."
+if [ ! -f "/usr/local/lib/libta_lib.a" ]; then
+    cd /tmp
+    wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
+    tar -xzf ta-lib-0.4.0-src.tar.gz
+    cd ta-lib/
+    ./configure --prefix=/usr/local
+    make
+    sudo make install
+    sudo ldconfig
+    cd "$PROJECT_DIR"
+fi
+
 # Check if virtual environment exists
 if [ ! -d "$VENV_PATH" ]; then
     print_error "Virtual environment not found at $VENV_PATH"
@@ -81,6 +100,11 @@ source "$VENV_PATH/bin/activate"
 if [ -f "requirements.txt" ]; then
     print_status "Installing/updating Python packages..."
     pip install -r requirements.txt
+else
+    print_status "Installing basic Python packages..."
+    pip install flask gunicorn yfinance pandas numpy scikit-learn requests beautifulsoup4 lxml
+    # Install TA-Lib Python wrapper after C library is installed
+    pip install TA-Lib
 fi
 
 # Check if port 8080 is available, if not try port 80

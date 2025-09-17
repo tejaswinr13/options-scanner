@@ -10,7 +10,7 @@ import numpy as np
 from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
-import talib
+import pandas_ta as ta
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
@@ -62,47 +62,88 @@ class TechnicalAnalysisService:
     def _calculate_technical_indicators(self, data: pd.DataFrame) -> Dict:
         """Calculate comprehensive technical indicators"""
         try:
-            close = data['Close'].values.astype(np.float64)
-            high = data['High'].values.astype(np.float64)
-            low = data['Low'].values.astype(np.float64)
-            volume = data['Volume'].values.astype(np.float64)
+            close = data['Close']
+            high = data['High']
+            low = data['Low']
+            volume = data['Volume']
             
             indicators = {}
             
             # Moving Averages
-            indicators['sma_20'] = float(talib.SMA(close, timeperiod=20)[-1]) if len(close) >= 20 else None
-            indicators['sma_50'] = float(talib.SMA(close, timeperiod=50)[-1]) if len(close) >= 50 else None
-            indicators['sma_200'] = float(talib.SMA(close, timeperiod=200)[-1]) if len(close) >= 200 else None
-            indicators['ema_12'] = float(talib.EMA(close, timeperiod=12)[-1]) if len(close) >= 12 else None
-            indicators['ema_26'] = float(talib.EMA(close, timeperiod=26)[-1]) if len(close) >= 26 else None
+            sma_20 = ta.sma(close, length=20)
+            indicators['sma_20'] = float(sma_20.iloc[-1]) if sma_20 is not None and len(sma_20.dropna()) > 0 else None
+            sma_50 = ta.sma(close, length=50)
+            indicators['sma_50'] = float(sma_50.iloc[-1]) if sma_50 is not None and len(sma_50.dropna()) > 0 else None
+            sma_200 = ta.sma(close, length=200)
+            indicators['sma_200'] = float(sma_200.iloc[-1]) if sma_200 is not None and len(sma_200.dropna()) > 0 else None
+            ema_12 = ta.ema(close, length=12)
+            indicators['ema_12'] = float(ema_12.iloc[-1]) if ema_12 is not None and len(ema_12.dropna()) > 0 else None
+            ema_26 = ta.ema(close, length=26)
+            indicators['ema_26'] = float(ema_26.iloc[-1]) if ema_26 is not None and len(ema_26.dropna()) > 0 else None
             
             # Oscillators
-            indicators['rsi'] = float(talib.RSI(close, timeperiod=14)[-1]) if len(close) >= 14 else None
-            indicators['stoch_k'], indicators['stoch_d'] = talib.STOCH(high, low, close)
-            indicators['stoch_k'] = float(indicators['stoch_k'][-1]) if indicators['stoch_k'] is not None else None
-            indicators['stoch_d'] = float(indicators['stoch_d'][-1]) if indicators['stoch_d'] is not None else None
+            rsi = ta.rsi(close, length=14)
+            indicators['rsi'] = float(rsi.iloc[-1]) if rsi is not None and len(rsi.dropna()) > 0 else None
+            
+            try:
+                stoch = ta.stoch(high, low, close)
+                if stoch is not None and not stoch.empty:
+                    indicators['stoch_k'] = float(stoch['STOCHk_14_3_3'].iloc[-1]) if 'STOCHk_14_3_3' in stoch.columns else None
+                    indicators['stoch_d'] = float(stoch['STOCHd_14_3_3'].iloc[-1]) if 'STOCHd_14_3_3' in stoch.columns else None
+                else:
+                    indicators['stoch_k'] = None
+                    indicators['stoch_d'] = None
+            except:
+                indicators['stoch_k'] = None
+                indicators['stoch_d'] = None
             
             # MACD
-            macd, macd_signal, macd_hist = talib.MACD(close)
-            indicators['macd'] = float(macd[-1]) if macd is not None else None
-            indicators['macd_signal'] = float(macd_signal[-1]) if macd_signal is not None else None
-            indicators['macd_histogram'] = float(macd_hist[-1]) if macd_hist is not None else None
+            try:
+                macd = ta.macd(close)
+                if macd is not None and not macd.empty:
+                    indicators['macd'] = float(macd['MACD_12_26_9'].iloc[-1]) if 'MACD_12_26_9' in macd.columns else None
+                    indicators['macd_signal'] = float(macd['MACDs_12_26_9'].iloc[-1]) if 'MACDs_12_26_9' in macd.columns else None
+                    indicators['macd_histogram'] = float(macd['MACDh_12_26_9'].iloc[-1]) if 'MACDh_12_26_9' in macd.columns else None
+                else:
+                    indicators['macd'] = None
+                    indicators['macd_signal'] = None
+                    indicators['macd_histogram'] = None
+            except:
+                indicators['macd'] = None
+                indicators['macd_signal'] = None
+                indicators['macd_histogram'] = None
             
             # Bollinger Bands
-            bb_upper, bb_middle, bb_lower = talib.BBANDS(close)
-            indicators['bb_upper'] = float(bb_upper[-1]) if bb_upper is not None else None
-            indicators['bb_middle'] = float(bb_middle[-1]) if bb_middle is not None else None
-            indicators['bb_lower'] = float(bb_lower[-1]) if bb_lower is not None else None
+            try:
+                bb = ta.bbands(close)
+                if bb is not None and not bb.empty:
+                    indicators['bb_upper'] = float(bb['BBU_5_2.0'].iloc[-1]) if 'BBU_5_2.0' in bb.columns else None
+                    indicators['bb_middle'] = float(bb['BBM_5_2.0'].iloc[-1]) if 'BBM_5_2.0' in bb.columns else None
+                    indicators['bb_lower'] = float(bb['BBL_5_2.0'].iloc[-1]) if 'BBL_5_2.0' in bb.columns else None
+                else:
+                    indicators['bb_upper'] = None
+                    indicators['bb_middle'] = None
+                    indicators['bb_lower'] = None
+            except:
+                indicators['bb_upper'] = None
+                indicators['bb_middle'] = None
+                indicators['bb_lower'] = None
+            
             indicators['bb_width'] = (indicators['bb_upper'] - indicators['bb_lower']) / indicators['bb_middle'] * 100 if all([indicators['bb_upper'], indicators['bb_lower'], indicators['bb_middle']]) else None
             
             # Volume indicators
-            indicators['obv'] = float(talib.OBV(close, volume)[-1]) if len(close) > 0 else None
-            indicators['ad_line'] = float(talib.AD(high, low, close, volume)[-1]) if len(close) > 0 else None
+            obv = ta.obv(close, volume)
+            indicators['obv'] = float(obv.iloc[-1]) if obv is not None and len(obv.dropna()) > 0 else None
+            ad = ta.ad(high, low, close, volume)
+            indicators['ad_line'] = float(ad.iloc[-1]) if ad is not None and len(ad.dropna()) > 0 else None
             
             # Momentum indicators
-            indicators['williams_r'] = float(talib.WILLR(high, low, close)[-1]) if len(close) >= 14 else None
-            indicators['cci'] = float(talib.CCI(high, low, close)[-1]) if len(close) >= 14 else None
-            indicators['atr'] = float(talib.ATR(high, low, close)[-1]) if len(close) >= 14 else None
+            willr = ta.willr(high, low, close)
+            indicators['williams_r'] = float(willr.iloc[-1]) if willr is not None and len(willr.dropna()) > 0 else None
+            cci = ta.cci(high, low, close)
+            indicators['cci'] = float(cci.iloc[-1]) if cci is not None and len(cci.dropna()) > 0 else None
+            atr = ta.atr(high, low, close)
+            indicators['atr'] = float(atr.iloc[-1]) if atr is not None and len(atr.dropna()) > 0 else None
             
             # Clean None values and convert numpy types to Python types
             cleaned_indicators = {}
@@ -133,15 +174,14 @@ class TechnicalAnalysisService:
             
             patterns = {}
             
-            # Candlestick patterns - convert numpy bool to Python bool
-            patterns['doji'] = bool(int(talib.CDLDOJI(open_prices, high, low, close)[-1]))
-            patterns['hammer'] = bool(int(talib.CDLHAMMER(open_prices, high, low, close)[-1]))
-            patterns['shooting_star'] = bool(int(talib.CDLSHOOTINGSTAR(open_prices, high, low, close)[-1]))
-            engulfing_val = int(talib.CDLENGULFING(open_prices, high, low, close)[-1])
-            patterns['engulfing_bullish'] = engulfing_val > 0
-            patterns['engulfing_bearish'] = engulfing_val < 0
-            patterns['morning_star'] = bool(int(talib.CDLMORNINGSTAR(open_prices, high, low, close)[-1]))
-            patterns['evening_star'] = bool(int(talib.CDLEVENINGSTAR(open_prices, high, low, close)[-1]))
+            # Candlestick patterns - using pandas-ta or custom logic
+            patterns['doji'] = self._detect_doji(open_prices, high, low, close)
+            patterns['hammer'] = self._detect_hammer(open_prices, high, low, close)
+            patterns['shooting_star'] = self._detect_shooting_star(open_prices, high, low, close)
+            patterns['engulfing_bullish'] = self._detect_bullish_engulfing(open_prices, high, low, close)
+            patterns['engulfing_bearish'] = self._detect_bearish_engulfing(open_prices, high, low, close)
+            patterns['morning_star'] = self._detect_morning_star(open_prices, high, low, close)
+            patterns['evening_star'] = self._detect_evening_star(open_prices, high, low, close)
             
             # Chart patterns (simplified detection)
             patterns.update(self._detect_chart_patterns(data))
@@ -462,6 +502,72 @@ class TechnicalAnalysisService:
             'data': data,
             'timestamp': time.time()
         }
+    
+    def _detect_doji(self, open_prices, high, low, close):
+        """Detect Doji candlestick pattern"""
+        if len(close) < 1:
+            return False
+        body = abs(close[-1] - open_prices[-1])
+        range_val = high[-1] - low[-1]
+        return body <= (range_val * 0.1) if range_val > 0 else False
+    
+    def _detect_hammer(self, open_prices, high, low, close):
+        """Detect Hammer candlestick pattern"""
+        if len(close) < 1:
+            return False
+        body = abs(close[-1] - open_prices[-1])
+        lower_shadow = min(open_prices[-1], close[-1]) - low[-1]
+        upper_shadow = high[-1] - max(open_prices[-1], close[-1])
+        return lower_shadow >= (body * 2) and upper_shadow <= (body * 0.5)
+    
+    def _detect_shooting_star(self, open_prices, high, low, close):
+        """Detect Shooting Star candlestick pattern"""
+        if len(close) < 1:
+            return False
+        body = abs(close[-1] - open_prices[-1])
+        upper_shadow = high[-1] - max(open_prices[-1], close[-1])
+        lower_shadow = min(open_prices[-1], close[-1]) - low[-1]
+        return upper_shadow >= (body * 2) and lower_shadow <= (body * 0.5)
+    
+    def _detect_bullish_engulfing(self, open_prices, high, low, close):
+        """Detect Bullish Engulfing pattern"""
+        if len(close) < 2:
+            return False
+        prev_bearish = close[-2] < open_prices[-2]
+        curr_bullish = close[-1] > open_prices[-1]
+        engulfing = open_prices[-1] < close[-2] and close[-1] > open_prices[-2]
+        return prev_bearish and curr_bullish and engulfing
+    
+    def _detect_bearish_engulfing(self, open_prices, high, low, close):
+        """Detect Bearish Engulfing pattern"""
+        if len(close) < 2:
+            return False
+        prev_bullish = close[-2] > open_prices[-2]
+        curr_bearish = close[-1] < open_prices[-1]
+        engulfing = open_prices[-1] > close[-2] and close[-1] < open_prices[-2]
+        return prev_bullish and curr_bearish and engulfing
+    
+    def _detect_morning_star(self, open_prices, high, low, close):
+        """Detect Morning Star pattern"""
+        if len(close) < 3:
+            return False
+        first_bearish = close[-3] < open_prices[-3]
+        small_body = abs(close[-2] - open_prices[-2]) < abs(close[-3] - open_prices[-3]) * 0.5
+        third_bullish = close[-1] > open_prices[-1]
+        gap_down = high[-2] < min(open_prices[-3], close[-3])
+        gap_up = low[-1] > max(open_prices[-2], close[-2])
+        return first_bearish and small_body and third_bullish and gap_down and gap_up
+    
+    def _detect_evening_star(self, open_prices, high, low, close):
+        """Detect Evening Star pattern"""
+        if len(close) < 3:
+            return False
+        first_bullish = close[-3] > open_prices[-3]
+        small_body = abs(close[-2] - open_prices[-2]) < abs(close[-3] - open_prices[-3]) * 0.5
+        third_bearish = close[-1] < open_prices[-1]
+        gap_up = low[-2] > max(open_prices[-3], close[-3])
+        gap_down = high[-1] < min(open_prices[-2], close[-2])
+        return first_bullish and small_body and third_bearish and gap_up and gap_down
 
 # Global instance
 technical_analysis_service = TechnicalAnalysisService()

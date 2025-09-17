@@ -66,23 +66,10 @@ print_status "Pulling latest code from GitHub..."
 git stash push logs/ -m "Stash log files before deployment"
 git pull origin main
 
-# Install system dependencies for TA-Lib
+# Install system dependencies
 print_status "Installing system dependencies..."
 sudo apt update
-sudo apt install -y build-essential wget
-
-# Install TA-Lib C library
-print_status "Installing TA-Lib C library (required for technical analysis)"
-print_status "Installing TA-Lib C library..."
-cd /tmp
-wget -q http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
-tar -xzf ta-lib-0.4.0-src.tar.gz
-cd ta-lib/
-./configure --prefix=/usr/local --quiet
-make --quiet
-sudo make install --quiet
-sudo ldconfig
-cd "$PROJECT_DIR"
+sudo apt install -y build-essential
 
 # Check if virtual environment exists
 if [ ! -d "$VENV_PATH" ]; then
@@ -95,13 +82,9 @@ fi
 print_status "Activating virtual environment and updating dependencies..."
 source "$VENV_PATH/bin/activate"
 
-# Install compatible NumPy first to avoid TA-Lib compilation issues
-print_status "Installing compatible NumPy version..."
-pip install "numpy<1.25.0"
-
-# Install TA-Lib Python wrapper separately with specific version
-print_status "Installing TA-Lib Python wrapper..."
-pip install --no-cache-dir TA-Lib==0.4.24
+# Install pandas-ta for technical analysis (replaces TA-Lib)
+print_status "Installing pandas-ta for technical analysis..."
+pip install pandas-ta==0.3.14b0
 
 # Install/update requirements if requirements.txt exists
 if [ -f "requirements.txt" ]; then

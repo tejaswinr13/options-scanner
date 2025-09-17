@@ -15,6 +15,7 @@ from options_analytics_service import OptionsAnalyticsService
 from news_service import NewsService
 from technical_analysis_service import TechnicalAnalysisService
 from fundamental_analysis_service import fundamental_service
+from alternative_data_service import alternative_data_service
 import threading
 import time
 import logging
@@ -236,15 +237,49 @@ def get_ticker_prices():
         
         for symbol in symbols:
             try:
-                ticker = yf.Ticker(symbol)
-                info = ticker.info
+                # Add delay to prevent rate limiting
+                time.sleep(0.1)
                 
-                # Get intraday data for VWAP and RSI calculations
-                hist_1d = ticker.history(period="1d", interval="1m")
-                hist_5d = ticker.history(period="5d", interval="5m")
-                hist_200d = ticker.history(period="200d", interval="1d")  # For SMA 200
+                # Try Yahoo Finance first
+                try:
+                    ticker = yf.Ticker(symbol)
+                    info = ticker.info
+                    hist = ticker.history(period="1d", interval="1m")
+                    
+                    if hist.empty:
+                        hist = ticker.history(period="5d")
+                    
+                    if hist.empty:
+                        raise Exception("No Yahoo Finance data available")
+                        
+                except Exception as yf_error:
+                    app.logger.warning(f'Yahoo Finance failed for {symbol}: {yf_error}')
+                    # Use alternative data service as fallback
+                    alt_data = alternative_data_service.get_stock_data(symbol)
+                    if alt_data:
+                        stocks_data[symbol] = {
+                            'price': alt_data['current_price'],
+                            'change': alt_data['price_change'],
+                            'changePercent': alt_data['price_change_percent'],
+                            'vwap': alt_data['technical_indicators']['vwap'],
+                            'rsi': alt_data['technical_indicators']['rsi'],
+                            'volume': alt_data['volume'],
+                            'marketCap': alt_data['market_cap'],
+                            'dayRange': f"{alt_data['day_low']} - {alt_data['day_high']}",
+                            'fiftyTwoWeekRange': f"{alt_data['fifty_two_week_low']} - {alt_data['fifty_two_week_high']}",
+                            'peRatio': alt_data['pe_ratio'],
+                            'eps': alt_data['eps'],
+                            'beta': alt_data['beta'],
+                            'dividendYield': alt_data['dividend_yield'],
+                            'earnings': 'N/A',
+                            'source': alt_data['source']
+                        }
+                        continue
+                    else:
+                        app.logger.warning(f'All data sources failed for {symbol}')
+                        continue
                 
-                current_price = 0
+                current_price = info.get('currentPrice', info.get('regularMarketPrice', 0))
                 prev_close = info.get('previousClose', 0)
                 vwap = 0
                 rsi = 50

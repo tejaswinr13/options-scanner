@@ -9,26 +9,53 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import logging
+import time
 from typing import Dict, List, Optional
 
 class EnhancedStockService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-    
-    def get_comprehensive_stock_data(self, symbol: str) -> Dict:
-        """Get comprehensive stock data including all requested metrics"""
+        self.cache = {}
+        self.cache_duration = 300  # 5 minutes
+
+    def get_stock_data(self, symbol):
+        """Get comprehensive stock data with caching and rate limiting protection"""
+        cache_key = f"stock_data_{symbol}"
+        
+        # Check cache first
+        if cache_key in self.cache:
+            cache_time, data = self.cache[cache_key]
+            if time.time() - cache_time < self.cache_duration:
+                return data
+        
         try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
+            # Add delay to prevent rate limiting
+            time.sleep(0.5)
             
-            # Get historical data for various periods
-            hist_1d = ticker.history(period="1d", interval="1m")
-            hist_5d = ticker.history(period="5d", interval="5m")
-            hist_1mo = ticker.history(period="1mo", interval="1d")
-            hist_3mo = ticker.history(period="3mo", interval="1d")
-            hist_6mo = ticker.history(period="6mo", interval="1d")
-            hist_1y = ticker.history(period="1y", interval="1d")
-            hist_2y = ticker.history(period="2y", interval="1d")
+            ticker = yf.Ticker(symbol)
+            
+            # Get basic info with error handling
+            try:
+                info = ticker.info
+            except Exception as e:
+                self.logger.warning(f"Failed to get info for {symbol}: {e}")
+                # Return minimal data structure if API fails
+                return self._get_fallback_data(symbol)
+            
+            # Get historical data for calculations
+            try:
+                hist_1d = ticker.history(period="1d", interval="1m")
+                hist_5d = ticker.history(period="5d", interval="5m")
+                hist_1mo = ticker.history(period="1mo", interval="1d")
+                hist_3mo = ticker.history(period="3mo", interval="1d")
+                hist_6mo = ticker.history(period="6mo", interval="1d")
+                hist_1y = ticker.history(period="1y", interval="1d")
+                hist_2y = ticker.history(period="2y", interval="1d")
+                hist_5y = ticker.history(period="5y", interval="1d")
+                hist_max = ticker.history(period="max", interval="1d")
+            except Exception as e:
+                self.logger.warning(f"Failed to get history for {symbol}: {e}")
+                return self._get_fallback_data(symbol)
             hist_5y = ticker.history(period="5y", interval="1d")
             hist_max = ticker.history(period="max", interval="1d")
             
@@ -444,8 +471,68 @@ class EnhancedStockService:
                 return 'decreasing'
             else:
                 return 'neutral'
-        except:
+        except Exception as e:
+            self.logger.error(f"Error analyzing trend: {e}")
             return 'neutral'
+
+    def _get_fallback_data(self, symbol):
+        """Return fallback data when API fails due to rate limiting"""
+        return {
+            'symbol': symbol,
+            'current_price': 0.00,
+            'price_change': 0.00,
+            'price_change_percent': 0.00,
+            'day_high': 0.00,
+            'day_low': 0.00,
+            'fifty_two_week_high': 0.00,
+            'fifty_two_week_low': 0.00,
+            'volume': 0,
+            'market_cap': 'N/A',
+            'pe_ratio': 'N/A',
+            'dividend_yield': 'N/A',
+            'beta': 'N/A',
+            'eps': 'N/A',
+            'volume_analytics': {
+                '1day_avg': 0,
+                '5day_avg': 0,
+                '10day_avg': 0,
+                '15day_avg': 0,
+                '30day_avg': 0,
+                '3month_avg': 0,
+                '6month_avg': 0,
+                '1year_avg': 0
+            },
+            'technical_indicators': {
+                'rsi': 50.0,
+                'macd': 0.0,
+                'sma_20': 0.0,
+                'sma_50': 0.0,
+                'sma_200': 0.0,
+                'bollinger_upper': 0.0,
+                'bollinger_lower': 0.0
+            },
+            'price_statistics': {
+                '1day_return': 0.0,
+                '5day_return': 0.0,
+                '1month_return': 0.0,
+                '3month_return': 0.0,
+                '6month_return': 0.0,
+                '1year_return': 0.0,
+                'volatility': 0.0
+            },
+            'chart_data': {
+                '1day': [],
+                '5day': [],
+                '1month': [],
+                '3month': [],
+                '6month': [],
+                '1year': [],
+                '2year': [],
+                '5year': [],
+                'max': []
+            },
+            'error': 'Rate limited - showing cached/fallback data'
+        }
 
 # Global instance
 enhanced_stock_service = EnhancedStockService()

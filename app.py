@@ -147,6 +147,7 @@ def get_ticker_prices():
     """API endpoint to fetch real-time stock prices with VWAP, RSI, and Level 2 data"""
     try:
         import yfinance as yf
+        import time
         import pandas as pd
         import numpy as np
         

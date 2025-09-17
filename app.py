@@ -16,6 +16,7 @@ from news_service import NewsService
 from technical_analysis_service import TechnicalAnalysisService
 from fundamental_analysis_service import fundamental_service
 from alternative_data_service import alternative_data_service
+from database_service import database_service
 import threading
 import time
 import logging
@@ -145,33 +146,42 @@ def get_economic_data():
 
 @app.route('/api/ticker-prices', methods=['POST'])
 def get_ticker_prices():
-    """API endpoint to fetch real-time stock prices with VWAP, RSI, and Level 2 data"""
+    """API endpoint to fetch real-time stock prices - now uses local database first"""
     try:
-        import yfinance as yf
-        import time
-        import pandas as pd
-        import numpy as np
-        
         data = request.get_json()
         symbols = data.get('symbols', [])
         
         if not symbols:
             return jsonify({'error': 'No symbols provided'}), 400
         
-        app.logger.info(f'Fetching enhanced ticker data for symbols: {symbols}')
+        app.logger.info(f'Fetching ticker data for symbols: {symbols}')
+        
+        # Try local database first
+        try:
+            stocks_data = database_service.get_stock_data(symbols)
+            if stocks_data and len(stocks_data) > 0:
+                app.logger.info(f'Retrieved {len(stocks_data)} symbols from local database')
+                return jsonify({'stocks': stocks_data})
+        except Exception as e:
+            app.logger.warning(f'Local database unavailable: {e}, falling back to APIs')
+        
+        # Fallback to original API method
+        import yfinance as yf
+        import time
+        import pandas as pd
+        import numpy as np
         
         def calculate_rsi(prices, period=14):
             """Calculate RSI (Relative Strength Index)"""
             if len(prices) < period + 1:
-                return 50  # Default neutral RSI
+                return 50
             
             delta = prices.diff()
             gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
             loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-            
             rs = gain / loss
             rsi = 100 - (100 / (1 + rs))
-            return round(rsi.iloc[-1], 2) if not pd.isna(rsi.iloc[-1]) else 50
+            return rsi.iloc[-1] if not rsi.empty else 50
         
         def calculate_sma(prices, period):
             """Calculate Simple Moving Average"""
@@ -288,13 +298,18 @@ def get_ticker_prices():
                 sma_200 = 0
                 macd_data = {'macd': 0, 'signal': 0, 'histogram': 0}
                 
-                if not hist_1d.empty:
+                # Check if we have historical data and use it for calculations
+                if 'hist_1d' in locals() and not hist_1d.empty:
                     current_price = hist_1d['Close'].iloc[-1]
                     vwap = calculate_vwap(hist_1d)
                     
                     # Use 5-day data for RSI if available, otherwise 1-day
                     rsi_data = hist_5d['Close'] if not hist_5d.empty else hist_1d['Close']
                     rsi = calculate_rsi(rsi_data)
+                elif 'hist_5d' in locals() and not hist_5d.empty:
+                    current_price = hist_5d['Close'].iloc[-1]
+                    vwap = calculate_vwap(hist_5d)
+                    rsi = calculate_rsi(hist_5d['Close'])
                     
                     # Calculate SMAs using appropriate data periods
                     if not hist_5d.empty:
@@ -713,6 +728,42 @@ def get_comprehensive_stock_data(symbol):
         
     except Exception as e:
         app.logger.error(f'Comprehensive stock data error for {symbol}: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sync-data', methods=['POST'])
+def sync_data():
+    """API endpoint to receive synced data from local Mac"""
+    try:
+        data = request.get_json()
+        stocks = data.get('stocks', {})
+        sync_timestamp = data.get('sync_timestamp')
+        
+        if not stocks:
+            return jsonify({'error': 'No stock data provided'}), 400
+        
+        # Store synced data (you could save to a file or database here)
+        sync_file = 'synced_stock_data.json'
+        with open(sync_file, 'w') as f:
+            json.dump({
+                'stocks': stocks,
+                'sync_timestamp': sync_timestamp,
+                'received_at': time.time()
+            }, f)
+        
+        app.logger.info(f'Received sync data for {len(stocks)} stocks')
+        return jsonify({'status': 'success', 'symbols_received': len(stocks)})
+        
+    except Exception as e:
+        app.logger.error(f'Sync data error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/database-stats')
+def get_database_stats():
+    """Get statistics about the local database connection"""
+    try:
+        stats = database_service.get_database_stats()
+        return jsonify(stats)
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/stock/chart-data/<symbol>')

@@ -65,10 +65,10 @@ fi
 EOF
 
 echo "📤 Copying deployment script to VM..."
-scp /tmp/vm_deploy.sh $VM_USER@$VM_IP:/tmp/vm_deploy.sh
+scp -i ~/.ssh/gcp_vm_key -o StrictHostKeyChecking=no /tmp/vm_deploy.sh $VM_USER@$VM_IP:/tmp/vm_deploy.sh
 
 echo "🔧 Executing deployment on VM..."
-ssh $VM_USER@$VM_IP 'chmod +x /tmp/vm_deploy.sh && /tmp/vm_deploy.sh'
+ssh -i ~/.ssh/gcp_vm_key -o StrictHostKeyChecking=no $VM_USER@$VM_IP 'chmod +x /tmp/vm_deploy.sh && /tmp/vm_deploy.sh'
 
 echo "✅ Deployment completed!"
 echo "🧪 Testing the fix..."

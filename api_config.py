@@ -8,13 +8,13 @@ import os
 # API Keys Configuration
 API_KEYS = {
     'finnhub': {
-        'key': os.getenv('FINNHUB_API_KEY', 'demo'),  # Get from environment or use demo
+        'key': os.getenv('FINNHUB_API_KEY', 'd355rqhr01qhorbgo01gd355rqhr01qhorbgo020'),
         'base_url': 'https://finnhub.io/api/v1',
         'rate_limit': 1.0,  # seconds between calls
         'calls_per_minute': 60
     },
     'alpha_vantage': {
-        'key': os.getenv('ALPHA_VANTAGE_API_KEY', 'demo'),
+        'key': os.getenv('ALPHA_VANTAGE_API_KEY', 'ED78A3HRZ9049HNV'),
         'base_url': 'https://www.alphavantage.co/query',
         'rate_limit': 12.0,  # 5 calls per minute = 12 seconds between calls
         'calls_per_minute': 5
@@ -26,7 +26,7 @@ API_KEYS = {
         'calls_per_minute': 100
     },
     'polygon': {
-        'key': os.getenv('POLYGON_API_KEY', 'demo'),
+        'key': os.getenv('POLYGON_API_KEY', 'iVUfcZDzSTuZqwuhgJPCx6p_L6bo9BiX'),
         'base_url': 'https://api.polygon.io/v2',
         'rate_limit': 12.0,  # Free tier: 5 calls per minute
         'calls_per_minute': 5
@@ -74,10 +74,10 @@ def print_api_setup_instructions():
         print(f"  Environment Variable: {api_name.upper()}_API_KEY")
     
     print("\n📝 To set up environment variables:")
-    print("export FINNHUB_API_KEY='your_key_here'")
-    print("export ALPHA_VANTAGE_API_KEY='your_key_here'")
+    print("export FINNHUB_API_KEY='d355rqhr01qhorbgo01gd355rqhr01qhorbgo020'")
+    print("export ALPHA_VANTAGE_API_KEY='ED78A3HRZ9049HNV'")
     print("export IEX_CLOUD_API_KEY='your_key_here'")
-    print("export POLYGON_API_KEY='your_key_here'")
+    print("export POLYGON_API_KEY='iVUfcZDzSTuZqwuhgJPCx6p_L6bo9BiX'")
     
     print("\n💡 Add these to your ~/.bashrc or ~/.zshrc for persistence")
 

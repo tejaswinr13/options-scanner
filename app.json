@@ -1,0 +1,24 @@
+{
+  "name": "stock-dashboard-pro",
+  "description": "Professional Stock Analysis Dashboard with Real-time Data",
+  "image": "heroku/python",
+  "repository": "https://github.com/yourusername/stock-dashboard",
+  "keywords": ["python", "flask", "stocks", "finance", "dashboard"],
+  "env": {
+    "FLASK_ENV": {
+      "description": "Flask environment",
+      "value": "production"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}

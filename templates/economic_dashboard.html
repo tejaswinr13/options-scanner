@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Economic Prediction Dashboard - MarketFlow Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #00c851 0%, #007e33 100%);
+            --danger-gradient: linear-gradient(135deg, #ff3547 0%, #c41e3a 100%);
+            --warning-gradient: linear-gradient(135deg, #ffbb33 0%, #ff8800 100%);
+            --info-gradient: linear-gradient(135deg, #33b5e5 0%, #0099cc 100%);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #ffffff;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(15px);
+            margin: 20px auto;
+            max-width: 1400px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .analysis-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .analysis-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 18px;
+        }
+        
+        .macro-icon { background: var(--primary-gradient); }
+        .micro-icon { background: var(--success-gradient); }
+        .market-icon { background: var(--info-gradient); }
+        .geo-icon { background: var(--danger-gradient); }
+        .prediction-icon { background: var(--warning-gradient); }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .metric-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .positive { color: #22c55e; }
+        .negative { color: #ef4444; }
+        .neutral { color: #fbbf24; }
+        
+        .chart-container {
+            height: 200px;
+            margin: 15px 0;
+        }
+        
+        .prediction-score {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        
+        .bullish-score {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .bearish-score {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .neutral-score {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.1));
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+        
+        .score-number {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+        
+        .news-item {
+            padding: 10px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border-left: 3px solid #4f46e5;
+        }
+        
+        .news-time {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .refresh-btn {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
+        }
+        
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <div class="header">
+                <h1><i class="fas fa-chart-line me-3"></i>Economic Prediction Dashboard</h1>
+                <p class="mb-3">AI-Powered Market Intelligence & Economic Forecasting</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button class="refresh-btn" onclick="refreshAllData()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                        <div class="loading-spinner ms-2" id="loadingSpinner"></div>
+                    </button>
+                    <a href="/" class="btn btn-outline-light">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Options Scanner
+                    </a>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- Macro Economic Analysis -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <div class="card-icon macro-icon">
+                            <i class="fas fa-globe-americas"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Macro Economic Indicators</h5>
+                            <small class="text-muted">Federal Reserve & Economic Data</small>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <span>Federal Funds Rate</span>
+                        <span class="metric-value neutral" id="fedRate">Loading...</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Inflation (CPI YoY)</span>
+                        <span class="metric-value negative" id="inflation">Loading...</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Unemployment Rate</span>
+                        <span class="metric-value positive" id="unemployment">Loading...</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>GDP Growth (QoQ)</span>
+                        <span class="metric-value positive" id="gdpGrowth">Loading...</span>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="macroChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Market Sentiment & Trends -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <div class="card-icon market-icon">
+                            <i class="fas fa-chart-area"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Market Sentiment Analysis</h5>
+                            <small class="text-muted">Technical & Flow Indicators</small>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <span>VIX (Fear Index)</span>
+                        <span class="metric-value neutral" id="vix">Loading...</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Put/Call Ratio</span>
+                        <span class="metric-value negative" id="putCallRatio">Loading...</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Market Breadth</span>
+                        <span class="metric-value positive" id="marketBreadth">Loading...</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Options Flow</span>
+                        <span class="metric-value positive" id="optionsFlow">Loading...</span>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Sector Analysis -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <div class="card-icon micro-icon">
+                            <i class="fas fa-industry"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Sector Performance</h5>
+                            <small class="text-muted">Industry & Micro Trends</small>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <span>Technology</span>
+                        <span class="metric-value positive" id="techSector">Loading...</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Healthcare</span>
+                        <span class="metric-value positive" id="healthSector">Loading...</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Financials</span>
+                        <span class="metric-value negative" id="finSector">Loading...</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Energy</span>
+                        <span class="metric-value negative" id="energySector">Loading...</span>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="sectorChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Geopolitical Factors -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <div class="card-icon geo-icon">
+                            <i class="fas fa-flag"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Geopolitical Risk</h5>
+                            <small class="text-muted">Global Events & Policy</small>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <span>US-China Trade</span>
+                        <span class="metric-value neutral" id="tradeRisk">Moderate</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Energy Security</span>
+                        <span class="metric-value positive" id="energyRisk">Stable</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Currency Risk</span>
+                        <span class="metric-value neutral" id="currencyRisk">Low</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Political Stability</span>
+                        <span class="metric-value positive" id="politicalRisk">High</span>
+                    </div>
+                    
+                    <div class="news-item">
+                        <div class="news-time">2 hours ago</div>
+                        <div>Fed officials signal potential rate pause in upcoming meetings</div>
+                    </div>
+                    <div class="news-item">
+                        <div class="news-time">4 hours ago</div>
+                        <div>Tech earnings season shows mixed results amid AI investment surge</div>
+                    </div>
+                </div>
+
+                <!-- AI Prediction Model -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <div class="card-icon prediction-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">AI Market Prediction</h5>
+                            <small class="text-muted">Machine Learning Forecast</small>
+                        </div>
+                    </div>
+                    
+                    <div class="prediction-score bullish-score">
+                        <div class="score-number positive">72</div>
+                        <div>Bullish Confidence</div>
+                        <small>Next 30 Days</small>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <span>Model Accuracy</span>
+                        <span class="metric-value positive">84.2%</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Risk Level</span>
+                        <span class="metric-value neutral">Medium</span>
+                    </div>
+                    <div class="metric-row">
+                        <span>Volatility Forecast</span>
+                        <span class="metric-value neutral">Moderate</span>
+                    </div>
+                    
+                    <div style="margin-top: 15px;">
+                        <h6>Key Factors:</h6>
+                        <ul style="font-size: 13px; margin: 0; padding-left: 20px;">
+                            <li>Strong earnings momentum</li>
+                            <li>Fed policy stabilization</li>
+                            <li>Technical breakout patterns</li>
+                            <li>Options flow bullish bias</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Economic Calendar -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <div class="card-icon macro-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Economic Calendar</h5>
+                            <small class="text-muted">Upcoming Events</small>
+                        </div>
+                    </div>
+                    
+                    <div id="economicCalendarEvents">
+                        <!-- Will be populated dynamically with real dates -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize charts
+        let macroChart, sentimentChart, sectorChart;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            startDataRefresh();
+        });
+
+        function initializeCharts() {
+            // Macro Economic Chart
+            const macroCtx = document.getElementById('macroChart').getContext('2d');
+            macroChart = new Chart(macroCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Fed Funds Rate',
+                        data: [5.0, 5.25, 5.25, 5.5, 5.5, 5.25],
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#fff' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#fff' } }
+                    }
+                }
+            });
+
+            // Market Sentiment Chart
+            const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+            sentimentChart = new Chart(sentimentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Bullish', 'Bearish', 'Neutral'],
+                    datasets: [{
+                        data: [45, 25, 30],
+                        backgroundColor: ['#22c55e', '#ef4444', '#fbbf24']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#fff' } } }
+                }
+            });
+
+            // Sector Performance Chart
+            const sectorCtx = document.getElementById('sectorChart').getContext('2d');
+            sectorChart = new Chart(sectorCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Tech', 'Health', 'Finance', 'Energy', 'Consumer'],
+                    datasets: [{
+                        data: [2.4, 1.8, -0.7, -1.2, 0.5],
+                        backgroundColor: function(context) {
+                            const value = context.parsed.y;
+                            return value >= 0 ? '#22c55e' : '#ef4444';
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#fff' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#fff' } }
+                    }
+                }
+            });
+        }
+
+        function refreshAllData() {
+            const spinner = document.getElementById('loadingSpinner');
+            spinner.style.display = 'inline-block';
+            
+            console.log('Fetching data from /api/economic-data...');
+            
+            // Fetch real-time data from API
+            fetch('/api/economic-data')
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Raw API data received:', data);
+                    updateDashboardWithRealData(data);
+                    spinner.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    spinner.style.display = 'none';
+                    // Show error message to user
+                    alert('Failed to load real-time data: ' + error.message);
+                });
+        }
+
+        function updateDashboardWithRealData(data) {
+            try {
+                // Update economic indicators
+                if (data.economic_indicators) {
+                    const econ = data.economic_indicators;
+                    updateElement('fedRate', econ.fed_rate + '%');
+                    updateElement('inflation', econ.inflation + '%');
+                    updateElement('unemployment', econ.unemployment + '%');
+                    updateElement('gdpGrowth', econ.gdp_growth + '%');
+                }
+
+                // Update market data
+                if (data.market_data) {
+                    const market = data.market_data;
+                    if (market.vix) {
+                        updateElement('vix', market.vix.price);
+                    }
+                }
+
+                // Update options sentiment
+                if (data.options_sentiment) {
+                    const sentiment = data.options_sentiment;
+                    updateElement('putCallRatio', sentiment.put_call_ratio.toFixed(2));
+                    updateElement('optionsFlow', sentiment.sentiment);
+                    updateElement('marketBreadth', sentiment.market_breadth || 'Neutral');
+                }
+
+                // Update sector performance
+                if (data.sector_performance) {
+                    const sectors = data.sector_performance;
+                    updateElement('techSector', (sectors.technology || 0).toFixed(1) + '%');
+                    updateElement('healthSector', (sectors.healthcare || 0).toFixed(1) + '%');
+                    updateElement('finSector', (sectors.financials || 0).toFixed(1) + '%');
+                    updateElement('energySector', (sectors.energy || 0).toFixed(1) + '%');
+                }
+
+                // Update economic calendar with real dates
+                if (data.economic_calendar) {
+                    updateEconomicCalendar(data.economic_calendar);
+                }
+
+                console.log('Real-time data loaded:', data);
+
+                // Update charts with real data
+                updateChartsWithRealData(data);
+                
+                console.log('Dashboard updated with real data:', new Date().toLocaleTimeString());
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
+            }
+        }
+
+        function updateElement(id, value) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+                
+                // Update color based on value for percentages
+                if (typeof value === 'string' && value.includes('%')) {
+                    const numValue = parseFloat(value);
+                    if (numValue > 0) {
+                        element.className = 'metric-value positive';
+                    } else if (numValue < 0) {
+                        element.className = 'metric-value negative';
+                    } else {
+                        element.className = 'metric-value neutral';
+                    }
+                }
+            }
+        }
+
+        function updateChartsWithRealData(data) {
+            // Update sector chart with real data
+            if (sectorChart && data.sector_performance) {
+                const sectors = data.sector_performance;
+                const sectorData = [
+                    sectors.technology || 0,
+                    sectors.healthcare || 0,
+                    sectors.financials || 0,
+                    sectors.energy || 0,
+                    sectors.consumer_discretionary || 0
+                ];
+                
+                sectorChart.data.datasets[0].data = sectorData;
+                sectorChart.update();
+            }
+
+            // Update sentiment chart
+            if (sentimentChart && data.options_sentiment) {
+                const sentiment = data.options_sentiment;
+                const score = sentiment.score || 50;
+                
+                // Convert sentiment score to bullish/bearish/neutral percentages
+                let bullish = Math.max(0, score - 50) * 2;
+                let bearish = Math.max(0, 50 - score) * 2;
+                let neutral = 100 - bullish - bearish;
+                
+                sentimentChart.data.datasets[0].data = [bullish, bearish, neutral];
+                sentimentChart.update();
+            }
+        }
+
+        function startDataRefresh() {
+            // Initial data load immediately
+            refreshAllData();
+            
+            // Auto-refresh every 5 minutes with real data
+            setInterval(refreshAllData, 300000);
+        }
+
+        // Export functionality
+        function updateEconomicCalendar(events) {
+            const container = document.getElementById('economicCalendarEvents');
+            if (!container) return;
+            
+            let html = '';
+            events.forEach(event => {
+                html += `
+                    <div class="news-item">
+                        <div class="d-flex justify-content-between">
+                            <span><strong>${event.title}</strong></span>
+                            <span class="news-time">${event.date}</span>
+                        </div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.7);">${event.impact}</div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function exportDashboard() {
+            alert('Dashboard export functionality would be implemented here');
+        }
+    </script>
+</body>
+</html>

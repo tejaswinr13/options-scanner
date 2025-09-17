@@ -27,6 +27,8 @@ NC='\033[0m' # No Color
 PROJECT_DIR="$HOME/options-scanner"
 VENV_PATH="$PROJECT_DIR/venv"
 APP_PORT=8080
+GCP_PROJECT_ID="${GCP_PROJECT_ID:-}"
+DOMAIN_NAME="${DOMAIN_NAME:-tradepluse.site}"
 
 # Function to print colored output
 print_status() {
@@ -108,7 +110,19 @@ if [ -f "gunicorn.pid" ]; then
     PID=$(cat gunicorn.pid)
     if ps -p $PID > /dev/null; then
         print_status "✅ Options Scanner started successfully!"
-        print_status "🌐 Access your app at: http://$(curl -s ifconfig.me):$APP_PORT"
+        
+        # Get external IP
+        EXTERNAL_IP=$(curl -s ifconfig.me)
+        print_status "🌐 Access your app at: http://$EXTERNAL_IP:$APP_PORT"
+        
+        if [ "$DOMAIN_NAME" = "tradepluse.site" ]; then
+            print_status "🌍 Domain configured: $DOMAIN_NAME"
+            print_warning "Configure Squarespace DNS:"
+            print_warning "  Type: A, Host: @, Points to: $EXTERNAL_IP"
+            print_warning "  Type: A, Host: www, Points to: $EXTERNAL_IP"
+            print_status "After DNS propagates, access at: https://$DOMAIN_NAME"
+        fi
+        
         print_status "📊 Process ID: $PID"
         
         # Show recent logs

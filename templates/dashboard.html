@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Stock Dashboard</title>
+    <title>Stock</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -192,31 +192,74 @@
             color: #ff0000;
         }
 
-        /* Stock Price Tiles */
-        .stock-price-tile {
+        /* Stock Table */
+        .stock-table {
+            width: 100%;
             background: rgba(0, 0, 0, 0.8);
-            border: 2px solid #333;
-            border-radius: 15px;
-            padding: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .stock-table-header {
+            background: rgba(0, 255, 0, 0.1);
+            border-bottom: 2px solid #00ff00;
+            display: grid;
+            grid-template-columns: 70px 90px 110px 75px 50px 70px 75px 75px 75px 70px 70px 70px 80px 60px;
+            gap: 8px;
+            padding: 15px 8px;
+            font-weight: bold;
+            color: #00ff00;
+            font-size: 0.85rem;
             text-align: center;
+        }
+
+        .stock-row {
+            display: grid;
+            grid-template-columns: 70px 90px 110px 75px 50px 70px 75px 75px 75px 70px 70px 70px 80px 60px;
+            gap: 8px;
+            padding: 12px 8px;
+            border-bottom: 1px solid #333;
             transition: all 0.3s ease;
             cursor: pointer;
-            position: relative;
-            overflow: hidden;
+            align-items: center;
         }
 
-        .stock-price-tile:hover {
-            border-color: #00ff00;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.2);
+        .stock-row:hover {
+            background: rgba(0, 255, 0, 0.05);
+            border-left: 4px solid #00ff00;
         }
 
-        .stock-price-tile.positive {
-            border-left: 5px solid #00ff00;
+        .stock-row.positive {
+            border-left: 3px solid #00ff00;
         }
 
-        .stock-price-tile.negative {
-            border-left: 5px solid #ff4444;
+        .stock-row.negative {
+            border-left: 3px solid #ff4444;
+        }
+
+        .stock-cell {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stock-symbol-cell {
+            font-weight: bold;
+            color: #00ff00;
+            font-size: 1rem;
+        }
+
+        .stock-price-cell {
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .stock-change-cell {
+            font-weight: bold;
         }
 
         .stock-symbol-large {
@@ -250,8 +293,15 @@
         .stock-indicators-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 8px;
             margin-top: 15px;
+        }
+        
+        .stock-indicators-extended {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-top: 10px;
         }
 
         .stock-indicator-item {
@@ -309,13 +359,61 @@
             color: #888;
         }
 
-        .empty-stock-tiles {
+        .sma-value {
+            color: #00ccff;
+        }
+
+        .macd-value.positive {
+            color: #00ff00;
+        }
+
+        .macd-value.negative {
+            color: #ff4444;
+        }
+
+        .macd-value.neutral {
+            color: #cccccc;
+        }
+
+        .empty-stock-table {
             text-align: center;
             color: #888;
             font-style: italic;
             padding: 40px;
             border: 2px dashed #333;
             border-radius: 10px;
+        }
+
+        /* Responsive design for mobile */
+        @media (max-width: 1200px) {
+            .stock-table-header,
+            .stock-row {
+                grid-template-columns: 60px 80px 100px 65px 45px 60px 65px 65px 65px 60px 60px 60px 70px 50px;
+                gap: 6px;
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stock-table-header,
+            .stock-row {
+                grid-template-columns: 1fr;
+                gap: 5px;
+                text-align: left;
+            }
+            
+            .stock-cell {
+                display: flex;
+                justify-content: space-between;
+                padding: 5px 0;
+                border-bottom: 1px solid #444;
+            }
+            
+            .stock-cell::before {
+                content: attr(data-label);
+                font-weight: bold;
+                color: #00ff00;
+            }
         }
 
         /* Stock Ticker Input */
@@ -376,6 +474,12 @@
             align-items: center;
             gap: 10px;
             margin-bottom: 15px;
+            position: relative;
+        }
+
+        .autocomplete-container {
+            position: relative;
+            display: inline-block;
         }
 
         .watchlist-input {
@@ -393,6 +497,93 @@
             outline: none;
             border-color: #00ff00;
             box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .watchlist-input.valid {
+            border-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .watchlist-input.invalid {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+        }
+
+        /* Autocomplete Suggestions */
+        .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid #555;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .autocomplete-suggestion {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+            transition: background-color 0.2s ease;
+        }
+
+        .autocomplete-suggestion:hover,
+        .autocomplete-suggestion.selected {
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .autocomplete-suggestion:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-symbol {
+            font-weight: bold;
+            color: #00ff00;
+            font-size: 1rem;
+        }
+
+        .suggestion-name {
+            color: #ccc;
+            font-size: 0.9rem;
+            margin-top: 2px;
+        }
+
+        .suggestion-match-type {
+            color: #888;
+            font-size: 0.8rem;
+            font-style: italic;
+        }
+
+        /* Validation Status */
+        .validation-status {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+        }
+
+        .validation-status.valid {
+            color: #00ff00;
+        }
+
+        .validation-status.invalid {
+            color: #ff4444;
+        }
+
+        .validation-status.loading {
+            color: #ffaa00;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: translateY(-50%) rotate(0deg); }
+            100% { transform: translateY(-50%) rotate(360deg); }
         }
 
         .add-btn {
@@ -491,14 +682,63 @@
                 <i class="fas fa-list"></i> Manage Your Watchlist
             </h4>
             <div class="watchlist-input-group">
-                <input type="text" id="watchlistInput" class="watchlist-input" placeholder="Enter stock symbol (e.g., AAPL)" maxlength="10">
-                <button class="add-btn" onclick="addToWatchlist()">
+                <div class="autocomplete-container">
+                    <input type="text" id="watchlistInput" class="watchlist-input" placeholder="Enter stock symbol (e.g., AAPL)" maxlength="10" autocomplete="off">
+                    <div class="validation-status" id="validationStatus"></div>
+                    <div class="autocomplete-suggestions" id="autocompleteSuggestions"></div>
+                </div>
+                <button class="add-btn" onclick="addToWatchlist()" id="addStockBtn">
                     <i class="fas fa-plus"></i> Add Stock
                 </button>
             </div>
             <div class="watchlist-tags" id="watchlistTags">
                 <!-- Watchlist symbols will be displayed here -->
             </div>
+        </div>
+
+
+        <!-- Stock Ticker URL Generators Section -->
+        <div class="section-title">
+            <i class="fas fa-link"></i> Stock Ticker URL Generators
+        </div>
+        
+        <div class="ticker-input-section">
+            <input type="text" id="tickerInput" class="ticker-input" placeholder="Enter Stock Ticker (e.g., AAPL)" maxlength="10">
+            <button class="generate-btn" onclick="generateUrls()">Generate Links</button>
+        </div>
+
+        <div class="tiles-grid" id="urlGeneratorTiles">
+            <div class="tile url-generator-tile" onclick="openTradingView()">
+                <div class="tile-icon">
+                    <i class="fas fa-chart-candlestick"></i>
+                </div>
+                <div class="tile-title">TradingView</div>
+                <div class="tile-description">Advanced charting and analysis</div>
+            </div>
+            
+            <div class="tile url-generator-tile" onclick="openStockTwits()">
+                <div class="tile-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="tile-title">StockTwits</div>
+                <div class="tile-description">Social sentiment and discussions</div>
+            </div>
+            
+            <div class="tile url-generator-tile" onclick="openRobinhood()">
+                <div class="tile-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <div class="tile-title">Robinhood</div>
+                <div class="tile-description">Trading platform</div>
+            </div>
+        </div>
+
+        <!-- Stock Price Display Table Section -->
+        <div class="section-title">
+            <i class="fas fa-chart-area"></i> Stock Price Data
+        </div>
+        <div class="stock-table" id="stockPriceTable">
+            <!-- Stock price table will be populated here -->
         </div>
 
         <!-- Market Events & Resources Section -->
@@ -614,67 +854,36 @@
                 <div class="tile-description">Market sentiment analysis</div>
             </a>
         </div>
-
-        <!-- Stock Ticker URL Generators Section -->
-        <div class="section-title">
-            <i class="fas fa-link"></i> Stock Ticker URL Generators
-        </div>
-        
-        <div class="ticker-input-section">
-            <input type="text" id="tickerInput" class="ticker-input" placeholder="Enter Stock Ticker (e.g., AAPL)" maxlength="10">
-            <button class="generate-btn" onclick="generateUrls()">Generate Links</button>
-        </div>
-
-        <div class="tiles-grid" id="urlGeneratorTiles">
-            <div class="tile url-generator-tile" onclick="openTradingView()">
-                <div class="tile-icon">
-                    <i class="fas fa-chart-candlestick"></i>
-                </div>
-                <div class="tile-title">TradingView</div>
-                <div class="tile-description">Advanced charting and analysis</div>
-            </div>
-            
-            <div class="tile url-generator-tile" onclick="openStockTwits()">
-                <div class="tile-icon">
-                    <i class="fas fa-comments"></i>
-                </div>
-                <div class="tile-title">StockTwits</div>
-                <div class="tile-description">Social sentiment and discussions</div>
-            </div>
-            
-            <div class="tile url-generator-tile" onclick="openRobinhood()">
-                <div class="tile-icon">
-                    <i class="fas fa-mobile-alt"></i>
-                </div>
-                <div class="tile-title">Robinhood</div>
-                <div class="tile-description">Trading platform</div>
-            </div>
-        </div>
-
-        <!-- Stock Price Display Tiles Section -->
-        <div class="section-title">
-            <i class="fas fa-chart-area"></i> Stock Price Tiles
-        </div>
-        <div class="tiles-grid" id="stockPriceTiles">
-            <!-- Stock price tiles will be populated here -->
-        </div>
     </div>
 
     <script>
         let stockData = {};
+        // Default persistent watchlist - these stocks will always be included
+        const defaultWatchlist = ['LMND','HIMS','RKLB','TEM','SOUN','NBIS','GTLB','ESTC','WULF','RKT','DLO','CMG','FIG','OSCR','FIGR','VKTX','OPEN','RDW','KROS','PLTR','MSTR','SYM','OKLO','SOFI','IONQ','GRAB','EOSE','CRWV','BULL','APLD','BN','ASPI','IREN'];
         let watchlist = JSON.parse(localStorage.getItem('dashboardWatchlist')) || [];
+
+        // Initialize watchlist with default stocks (but allow removal)
+        function initializeWatchlist() {
+            // Only add default stocks if watchlist is empty
+            if (watchlist.length === 0) {
+                watchlist = [...defaultWatchlist];
+                localStorage.setItem('dashboardWatchlist', JSON.stringify(watchlist));
+            }
+        }
 
         // Initialize the dashboard
         document.addEventListener('DOMContentLoaded', function() {
+            initializeWatchlist();
             updateWatchlistDisplay();
+            
             if (watchlist.length > 0) {
                 fetchStockData();
                 if (!updateInterval) {
-                    updateInterval = setInterval(fetchStockData, 30000); // Update every 30 seconds
+                    updateInterval = setInterval(fetchStockData, 30000); // Increased to 30 seconds to avoid rate limits
                 }
             } else {
                 showEmptyWatchlist();
-                updateStockPriceTiles(); // Show empty state for tiles too
+                updateStockPriceTable();
             }
         });
 
@@ -691,7 +900,7 @@
                 if (data.stocks) {
                     stockData = data.stocks;
                     updateScroller();
-                    updateStockPriceTiles();
+                    updateStockPriceTable();
                 }
             })
             .catch(error => {
@@ -722,7 +931,7 @@
                     const data = stockData[symbol];
                     const item = document.createElement('div');
                     item.className = 'stock-item';
-                    item.onclick = () => openTradingViewForSymbol(symbol);
+                    item.onclick = () => openStockDetail(symbol);
                     
                     const price = data.price || 0;
                     const change = data.change || 0;
@@ -760,19 +969,40 @@
             content.style.animation = null;
         }
 
-        function updateStockPriceTiles() {
-            const container = document.getElementById('stockPriceTiles');
+        function updateStockPriceTable() {
+            const container = document.getElementById('stockPriceTable');
             container.innerHTML = '';
             
             if (watchlist.length === 0) {
-                container.innerHTML = '<div class="empty-stock-tiles">Add stocks to your watchlist to see detailed price tiles here</div>';
+                container.innerHTML = '<div class="empty-stock-table">Add stocks to your watchlist to see detailed price data here</div>';
                 return;
             }
+
+            // Create table header
+            const header = document.createElement('div');
+            header.className = 'stock-table-header';
+            header.innerHTML = `
+                <div>Symbol</div>
+                <div>Price</div>
+                <div>Change</div>
+                <div>VWAP</div>
+                <div>RSI</div>
+                <div>Volume</div>
+                <div>SMA 20</div>
+                <div>SMA 50</div>
+                <div>SMA 200</div>
+                <div>MACD</div>
+                <div>Signal</div>
+                <div>Hist</div>
+                <div>Earnings</div>
+                <div>Action</div>
+            `;
+            container.appendChild(header);
 
             watchlist.forEach(symbol => {
                 if (stockData[symbol]) {
                     const data = stockData[symbol];
-                    const tile = document.createElement('div');
+                    const row = document.createElement('div');
                     
                     const price = data.price || 0;
                     const change = data.change || 0;
@@ -781,6 +1011,12 @@
                     const rsi = data.rsi || 50;
                     const volume = data.volume || 0;
                     const earningsDisplay = data.earningsDisplay || 'N/A';
+                    const sma20 = data.sma_20 || 0;
+                    const sma50 = data.sma_50 || 0;
+                    const sma200 = data.sma_200 || 0;
+                    const macd = data.macd || 0;
+                    const macdSignal = data.macd_signal || 0;
+                    const macdHistogram = data.macd_histogram || 0;
                     
                     const changeClass = change >= 0 ? 'positive' : 'negative';
                     const changeSign = change >= 0 ? '+' : '';
@@ -798,38 +1034,37 @@
                         earningsClass = 'earnings-far';
                     }
 
+                    let macdClass = 'neutral';
+                    if (macdHistogram > 0) macdClass = 'positive';
+                    else if (macdHistogram < 0) macdClass = 'negative';
+
                     const volumeFormatted = formatVolume(volume);
                     
-                    tile.className = `stock-price-tile ${changeClass}`;
-                    tile.onclick = () => openTradingViewForSymbol(symbol);
+                    row.className = `stock-row ${changeClass}`;
+                    row.onclick = () => openStockDetail(symbol);
                     
-                    tile.innerHTML = `
-                        <div class="stock-symbol-large">${symbol}</div>
-                        <div class="stock-price-large">$${price.toFixed(2)}</div>
-                        <div class="stock-change-large ${changeClass}">
-                            ${changeSign}${change.toFixed(2)} (${changePercent.toFixed(2)}%)
-                        </div>
-                        <div class="stock-indicators-grid">
-                            <div class="stock-indicator-item">
-                                <div class="indicator-label-small">VWAP</div>
-                                <div class="indicator-value-small vwap-value">$${vwap.toFixed(2)}</div>
-                            </div>
-                            <div class="stock-indicator-item">
-                                <div class="indicator-label-small">RSI</div>
-                                <div class="indicator-value-small rsi-value ${rsiClass}">${rsi.toFixed(1)}</div>
-                            </div>
-                            <div class="stock-indicator-item">
-                                <div class="indicator-label-small">VOLUME</div>
-                                <div class="indicator-value-small volume-value">${volumeFormatted}</div>
-                            </div>
-                            <div class="stock-indicator-item">
-                                <div class="indicator-label-small">EARNINGS</div>
-                                <div class="indicator-value-small earnings-value ${earningsClass}">${earningsDisplay}</div>
-                            </div>
+                    row.innerHTML = `
+                        <div class="stock-cell stock-symbol-cell" data-label="Symbol">${symbol}</div>
+                        <div class="stock-cell stock-price-cell" data-label="Price">$${price.toFixed(2)}</div>
+                        <div class="stock-cell stock-change-cell ${changeClass}" data-label="Change">${changeSign}${change.toFixed(2)} (${changePercent.toFixed(2)}%)</div>
+                        <div class="stock-cell vwap-value" data-label="VWAP">$${vwap.toFixed(2)}</div>
+                        <div class="stock-cell rsi-value ${rsiClass}" data-label="RSI">${rsi.toFixed(1)}</div>
+                        <div class="stock-cell volume-value" data-label="Volume">${volumeFormatted}</div>
+                        <div class="stock-cell sma-value" data-label="SMA 20">$${sma20.toFixed(2)}</div>
+                        <div class="stock-cell sma-value" data-label="SMA 50">$${sma50.toFixed(2)}</div>
+                        <div class="stock-cell sma-value" data-label="SMA 200">$${sma200.toFixed(2)}</div>
+                        <div class="stock-cell macd-value ${macdClass}" data-label="MACD">${macd.toFixed(4)}</div>
+                        <div class="stock-cell macd-value" data-label="Signal">${macdSignal.toFixed(4)}</div>
+                        <div class="stock-cell macd-value ${macdClass}" data-label="Hist">${macdHistogram.toFixed(4)}</div>
+                        <div class="stock-cell earnings-value ${earningsClass}" data-label="Earnings">${earningsDisplay}</div>
+                        <div class="stock-cell" data-label="Action">
+                            <i class="fas fa-chart-line" style="color: #00ff00; cursor: pointer; margin-right: 8px;" title="View Detailed Analysis" onclick="event.stopPropagation(); openStockDetail('${symbol}')"></i>
+                            <i class="fas fa-coins" style="color: #ff6600; cursor: pointer; margin-right: 8px;" title="Options Analysis" onclick="event.stopPropagation(); window.open('/options/${symbol}', '_blank')"></i>
+                            <i class="fas fa-newspaper" style="color: #00ccff; cursor: pointer;" title="Stock News" onclick="event.stopPropagation(); showStockNews('${symbol}')"></i>
                         </div>
                     `;
                     
-                    container.appendChild(tile);
+                    container.appendChild(row);
                 }
             });
         }
@@ -865,7 +1100,7 @@
             // Start fetching data if this is the first stock
             if (watchlist.length === 1 && !updateInterval) {
                 fetchStockData();
-                updateInterval = setInterval(fetchStockData, 30000);
+                updateInterval = setInterval(fetchStockData, 15000);
             } else {
                 fetchStockData();
             }
@@ -882,8 +1117,6 @@
                     clearInterval(updateInterval);
                     updateInterval = null;
                 }
-            } else {
-                fetchStockData();
             }
         }
 
@@ -897,11 +1130,11 @@
             }
             
             watchlist.forEach(symbol => {
-                const tag = document.createElement('div');
+                const tag = document.createElement('span');
                 tag.className = 'watchlist-tag';
                 tag.innerHTML = `
                     ${symbol}
-                    <span class="remove-symbol" onclick="removeFromWatchlist('${symbol}')">&times;</span>
+                    <span class="remove-btn" onclick="removeFromWatchlist('${symbol}')" title="Remove from watchlist">×</span>
                 `;
                 container.appendChild(tag);
             });
@@ -909,6 +1142,10 @@
 
         function openTradingViewForSymbol(symbol) {
             window.open(`https://www.tradingview.com/symbols/NASDAQ-${symbol}/`, '_blank');
+        }
+
+        function openStockDetail(symbol) {
+            window.location.href = `/stock/${symbol}`;
         }
 
         function generateUrls() {
@@ -968,12 +1205,470 @@
             }
         });
 
+        // Enhanced Stock Symbol Validation and Autocomplete System
+        let validationTimeout = null;
+        let currentValidation = null;
+        let selectedSuggestionIndex = -1;
+        let currentSuggestions = [];
+
+        // Initialize autocomplete system
+        function initializeAutocomplete() {
+            const input = document.getElementById('watchlistInput');
+            const suggestionsContainer = document.getElementById('autocompleteSuggestions');
+            const validationStatus = document.getElementById('validationStatus');
+
+            // Input event handler for real-time validation and suggestions
+            input.addEventListener('input', function(e) {
+                const query = e.target.value.trim();
+                
+                if (query.length === 0) {
+                    hideSuggestions();
+                    clearValidationStatus();
+                    return;
+                }
+
+                // Clear previous timeout
+                if (validationTimeout) {
+                    clearTimeout(validationTimeout);
+                }
+
+                // Show loading status
+                showValidationStatus('loading');
+
+                // Debounce validation and suggestions
+                validationTimeout = setTimeout(() => {
+                    validateAndSuggest(query);
+                }, 300);
+            });
+
+            // Keyboard navigation for suggestions
+            input.addEventListener('keydown', function(e) {
+                const suggestions = document.querySelectorAll('.autocomplete-suggestion');
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, suggestions.length - 1);
+                    updateSuggestionSelection();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+                    updateSuggestionSelection();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]) {
+                        selectSuggestion(currentSuggestions[selectedSuggestionIndex]);
+                    } else {
+                        addToWatchlist();
+                    }
+                } else if (e.key === 'Escape') {
+                    hideSuggestions();
+                    selectedSuggestionIndex = -1;
+                }
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.autocomplete-container')) {
+                    hideSuggestions();
+                }
+            });
+        }
+
+        async function validateAndSuggest(query) {
+            try {
+                // Get suggestions
+                const suggestionsResponse = await fetch(`/api/symbols/suggest?q=${encodeURIComponent(query)}&limit=8`);
+                const suggestionsData = await suggestionsResponse.json();
+                
+                if (suggestionsData.suggestions) {
+                    currentSuggestions = suggestionsData.suggestions;
+                    showSuggestions(suggestionsData.suggestions);
+                }
+
+                // Validate exact match if query looks like a symbol
+                if (query.length >= 1 && /^[A-Z]+$/.test(query.toUpperCase())) {
+                    const validationResponse = await fetch('/api/symbols/validate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ symbol: query.toUpperCase() })
+                    });
+                    
+                    const validationData = await validationResponse.json();
+                    
+                    if (validationData.valid) {
+                        showValidationStatus('valid');
+                        updateInputValidation('valid');
+                    } else {
+                        showValidationStatus('invalid');
+                        updateInputValidation('invalid');
+                    }
+                } else {
+                    clearValidationStatus();
+                    updateInputValidation('neutral');
+                }
+
+            } catch (error) {
+                console.error('Error in validation/suggestions:', error);
+                showValidationStatus('invalid');
+                updateInputValidation('invalid');
+            }
+        }
+
+        function showSuggestions(suggestions) {
+            const container = document.getElementById('autocompleteSuggestions');
+            container.innerHTML = '';
+            
+            if (suggestions.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            suggestions.forEach((suggestion, index) => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-suggestion';
+                div.innerHTML = `
+                    <div class="suggestion-symbol">${suggestion.symbol}</div>
+                    <div class="suggestion-name">${suggestion.name}</div>
+                    <div class="suggestion-match-type">${getMatchTypeDisplay(suggestion.match_type)}</div>
+                `;
+                
+                div.addEventListener('click', () => selectSuggestion(suggestion));
+                container.appendChild(div);
+            });
+
+            container.style.display = 'block';
+            selectedSuggestionIndex = -1;
+        }
+
+        function hideSuggestions() {
+            const container = document.getElementById('autocompleteSuggestions');
+            container.style.display = 'none';
+            selectedSuggestionIndex = -1;
+        }
+
+        function updateSuggestionSelection() {
+            const suggestions = document.querySelectorAll('.autocomplete-suggestion');
+            suggestions.forEach((suggestion, index) => {
+                suggestion.classList.toggle('selected', index === selectedSuggestionIndex);
+            });
+        }
+
+        function selectSuggestion(suggestion) {
+            const input = document.getElementById('watchlistInput');
+            input.value = suggestion.symbol;
+            hideSuggestions();
+            showValidationStatus('valid');
+            updateInputValidation('valid');
+            
+            // Auto-add to watchlist after selection
+            setTimeout(() => {
+                addToWatchlist();
+            }, 100);
+        }
+
+        function showValidationStatus(status) {
+            const statusElement = document.getElementById('validationStatus');
+            statusElement.className = `validation-status ${status}`;
+            
+            switch (status) {
+                case 'valid':
+                    statusElement.innerHTML = '<i class="fas fa-check"></i>';
+                    break;
+                case 'invalid':
+                    statusElement.innerHTML = '<i class="fas fa-times"></i>';
+                    break;
+                case 'loading':
+                    statusElement.innerHTML = '<i class="fas fa-spinner"></i>';
+                    break;
+                default:
+                    statusElement.innerHTML = '';
+            }
+        }
+
+        function clearValidationStatus() {
+            const statusElement = document.getElementById('validationStatus');
+            statusElement.className = 'validation-status';
+            statusElement.innerHTML = '';
+        }
+
+        function updateInputValidation(status) {
+            const input = document.getElementById('watchlistInput');
+            input.classList.remove('valid', 'invalid');
+            
+            if (status === 'valid') {
+                input.classList.add('valid');
+            } else if (status === 'invalid') {
+                input.classList.add('invalid');
+            }
+        }
+
+        function getMatchTypeDisplay(matchType) {
+            switch (matchType) {
+                case 'symbol_start':
+                    return 'Symbol match';
+                case 'symbol_contains':
+                    return 'Symbol contains';
+                case 'name_contains':
+                    return 'Company name match';
+                case 'popular':
+                    return 'Popular stock';
+                default:
+                    return 'Match';
+            }
+        }
+
+        // Enhanced addToWatchlist function with validation
+        async function addToWatchlistEnhanced() {
+            const input = document.getElementById('watchlistInput');
+            const symbol = input.value.toUpperCase().trim();
+            
+            if (!symbol) {
+                alert('Please enter a stock symbol');
+                return;
+            }
+            
+            if (watchlist.includes(symbol)) {
+                alert('Stock already in watchlist!');
+                input.value = '';
+                clearValidationStatus();
+                updateInputValidation('neutral');
+                return;
+            }
+
+            // Validate symbol before adding
+            try {
+                showValidationStatus('loading');
+                const response = await fetch('/api/symbols/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ symbol: symbol })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.valid) {
+                    alert(`Invalid stock symbol: ${symbol}. Please check the symbol and try again.`);
+                    showValidationStatus('invalid');
+                    updateInputValidation('invalid');
+                    return;
+                }
+                
+                // Add to watchlist
+                watchlist.push(symbol);
+                localStorage.setItem('dashboardWatchlist', JSON.stringify(watchlist));
+                updateWatchlistDisplay();
+                
+                // Clear input and validation
+                input.value = '';
+                clearValidationStatus();
+                updateInputValidation('neutral');
+                hideSuggestions();
+                
+                // Start fetching data if this is the first stock
+                if (watchlist.length === 1 && !updateInterval) {
+                    fetchStockData();
+                    updateInterval = setInterval(fetchStockData, 15000);
+                } else {
+                    fetchStockData();
+                }
+                
+            } catch (error) {
+                console.error('Error validating symbol:', error);
+                alert('Error validating symbol. Please try again.');
+                showValidationStatus('invalid');
+                updateInputValidation('invalid');
+            }
+        }
+
+        // Override the original addToWatchlist function
+        function addToWatchlist() {
+            addToWatchlistEnhanced();
+        }
+
+        // Initialize autocomplete when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeAutocomplete();
+        });
+
         // Handle Enter key in watchlist input
         document.getElementById('watchlistInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && selectedSuggestionIndex === -1) {
                 addToWatchlist();
             }
         });
+
+        // News functionality
+        let currentNewsSymbol = '';
+
+        async function showStockNews(symbol) {
+            currentNewsSymbol = symbol;
+            document.getElementById('newsModalSymbol').textContent = symbol;
+            document.getElementById('newsModalBody').innerHTML = '<div class="loading-text">Loading news...</div>';
+            
+            const modal = new bootstrap.Modal(document.getElementById('newsModal'));
+            modal.show();
+            
+            try {
+                const response = await fetch(`/api/news/stock/${symbol}?limit=8`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                renderNewsInModal(data);
+                
+            } catch (error) {
+                console.error('Error loading news:', error);
+                document.getElementById('newsModalBody').innerHTML = 
+                    '<div class="alert alert-warning">Error loading news data. Please try again.</div>';
+            }
+        }
+
+        function renderNewsInModal(data) {
+            const container = document.getElementById('newsModalBody');
+            
+            if (!data.news || data.news.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No recent news available for this stock.</div>';
+                return;
+            }
+            
+            let html = '';
+            
+            // Add summary stats
+            if (data.summary) {
+                const overallSentiment = getSentimentClass(data.summary.sentiment_score);
+                const overallText = getSentimentText(data.summary.sentiment_score);
+                
+                html += `
+                    <div class="mb-3 p-3" style="background-color: #2a2a2a; border-radius: 8px;">
+                        <h6 class="mb-2"><i class="fas fa-chart-bar"></i> News Summary</h6>
+                        <div class="d-flex justify-content-between">
+                            <span>${data.summary.total_articles} articles found</span>
+                            <span>Overall sentiment: <span class="sentiment-indicator ${overallSentiment}">${overallText}</span></span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Add news items
+            data.news.forEach(article => {
+                const sentimentClass = getSentimentClass(article.sentiment);
+                const sentimentText = getSentimentText(article.sentiment);
+                const publishedDate = formatNewsDate(article.published_date);
+                
+                html += `
+                    <div class="news-item mb-3 p-3" style="background-color: #2a2a2a; border-radius: 8px;">
+                        <div class="news-title mb-2">
+                            <a href="${article.url}" target="_blank" rel="noopener noreferrer" style="color: #ffffff; text-decoration: none;">
+                                ${article.title}
+                            </a>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="news-source" style="color: #888; font-size: 0.9em;">${article.source}</span>
+                            <div>
+                                <span class="sentiment-indicator ${sentimentClass} me-2">${sentimentText}</span>
+                                <span class="news-date" style="color: #aaa; font-size: 0.8em;">${publishedDate}</span>
+                            </div>
+                        </div>
+                        ${article.summary ? `<div class="news-summary" style="color: #ccc; font-size: 0.9em; line-height: 1.4;">${article.summary}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function getSentimentClass(sentiment) {
+            if (sentiment > 0.1) return 'sentiment-positive';
+            if (sentiment < -0.1) return 'sentiment-negative';
+            return 'sentiment-neutral';
+        }
+
+        function getSentimentText(sentiment) {
+            if (sentiment > 0.3) return 'Very Positive';
+            if (sentiment > 0.1) return 'Positive';
+            if (sentiment < -0.3) return 'Very Negative';
+            if (sentiment < -0.1) return 'Negative';
+            return 'Neutral';
+        }
+
+        function formatNewsDate(dateString) {
+            try {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffDays = Math.floor(diffHours / 24);
+                
+                if (diffHours < 1) return 'Just now';
+                if (diffHours < 24) return `${diffHours}h ago`;
+                if (diffDays < 7) return `${diffDays}d ago`;
+                
+                return date.toLocaleDateString();
+            } catch (error) {
+                return 'Recent';
+            }
+        }
     </script>
+
+    <!-- News Modal -->
+    <div class="modal fade" id="newsModal" tabindex="-1" aria-labelledby="newsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background-color: #1a1a1a; border: 1px solid #333;">
+                <div class="modal-header" style="border-bottom: 1px solid #333;">
+                    <h5 class="modal-title" id="newsModalLabel" style="color: #ffffff;">
+                        <i class="fas fa-newspaper"></i> <span id="newsModalSymbol"></span> News
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="newsModalBody" style="color: #ffffff; max-height: 500px; overflow-y: auto;">
+                    <div class="loading-text">Loading news...</div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #333;">
+                    <button type="button" class="btn btn-outline-info" onclick="openStockDetail(currentNewsSymbol)">
+                        <i class="fas fa-external-link-alt"></i> View Full Analysis
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .sentiment-indicator {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7em;
+            font-weight: bold;
+        }
+
+        .sentiment-positive {
+            background-color: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+        }
+
+        .sentiment-negative {
+            background-color: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+        }
+
+        .sentiment-neutral {
+            background-color: rgba(136, 136, 136, 0.2);
+            color: #888;
+        }
+
+        .loading-text {
+            color: #888;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
 </body>
 </html>

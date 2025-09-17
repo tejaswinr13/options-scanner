@@ -9,6 +9,12 @@ from yahoo_options_scanner import YahooOptionsScanner
 from options_simulator import OptionsSimulator
 from dark_pool_scanner import DarkPoolScanner
 from economic_data_service import economic_service
+from stock_symbols_service import stock_symbols_service
+from enhanced_stock_service import enhanced_stock_service
+from options_analytics_service import OptionsAnalyticsService
+from news_service import NewsService
+from technical_analysis_service import TechnicalAnalysisService
+from fundamental_analysis_service import fundamental_service
 import threading
 import time
 import logging
@@ -40,6 +46,11 @@ simulator = OptionsSimulator()
 dark_pool_results = {}
 dark_pool_status = {"running": False, "progress": "", "error": None}
 dark_pool_scanner = DarkPoolScanner()
+
+# Initialize services
+options_service = OptionsAnalyticsService()
+news_service = NewsService()
+technical_service = TechnicalAnalysisService()
 
 @app.route('/')
 def index():
@@ -111,6 +122,17 @@ def dashboard():
     response.headers['Expires'] = '0'
     return response
 
+@app.route('/stock/<symbol>')
+def stock_detail(symbol):
+    """Detailed stock analysis page"""
+    import time
+    cache_buster = int(time.time())
+    response = make_response(render_template('stock_detail.html', symbol=symbol.upper(), cache_buster=cache_buster))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 @app.route('/api/economic-data')
 def get_economic_data():
     """API endpoint to fetch real-time economic data"""
@@ -148,6 +170,30 @@ def get_ticker_prices():
             rs = gain / loss
             rsi = 100 - (100 / (1 + rs))
             return round(rsi.iloc[-1], 2) if not pd.isna(rsi.iloc[-1]) else 50
+        
+        def calculate_sma(prices, period):
+            """Calculate Simple Moving Average"""
+            if len(prices) < period:
+                return 0
+            sma = prices.rolling(window=period).mean()
+            return round(sma.iloc[-1], 2) if not pd.isna(sma.iloc[-1]) else 0
+        
+        def calculate_macd(prices, fast=12, slow=26, signal=9):
+            """Calculate MACD (Moving Average Convergence Divergence)"""
+            if len(prices) < slow + signal:
+                return {'macd': 0, 'signal': 0, 'histogram': 0}
+            
+            ema_fast = prices.ewm(span=fast).mean()
+            ema_slow = prices.ewm(span=slow).mean()
+            macd_line = ema_fast - ema_slow
+            signal_line = macd_line.ewm(span=signal).mean()
+            histogram = macd_line - signal_line
+            
+            return {
+                'macd': round(macd_line.iloc[-1], 4) if not pd.isna(macd_line.iloc[-1]) else 0,
+                'signal': round(signal_line.iloc[-1], 4) if not pd.isna(signal_line.iloc[-1]) else 0,
+                'histogram': round(histogram.iloc[-1], 4) if not pd.isna(histogram.iloc[-1]) else 0
+            }
         
         def calculate_vwap(hist_data):
             """Calculate VWAP (Volume Weighted Average Price)"""
@@ -195,11 +241,16 @@ def get_ticker_prices():
                 # Get intraday data for VWAP and RSI calculations
                 hist_1d = ticker.history(period="1d", interval="1m")
                 hist_5d = ticker.history(period="5d", interval="5m")
+                hist_200d = ticker.history(period="200d", interval="1d")  # For SMA 200
                 
                 current_price = 0
                 prev_close = info.get('previousClose', 0)
                 vwap = 0
                 rsi = 50
+                sma_20 = 0
+                sma_50 = 0
+                sma_200 = 0
+                macd_data = {'macd': 0, 'signal': 0, 'histogram': 0}
                 
                 if not hist_1d.empty:
                     current_price = hist_1d['Close'].iloc[-1]
@@ -208,6 +259,15 @@ def get_ticker_prices():
                     # Use 5-day data for RSI if available, otherwise 1-day
                     rsi_data = hist_5d['Close'] if not hist_5d.empty else hist_1d['Close']
                     rsi = calculate_rsi(rsi_data)
+                    
+                    # Calculate SMAs using appropriate data periods
+                    if not hist_5d.empty:
+                        sma_20 = calculate_sma(hist_5d['Close'], 20)
+                    
+                    if not hist_200d.empty:
+                        sma_50 = calculate_sma(hist_200d['Close'], 50)
+                        sma_200 = calculate_sma(hist_200d['Close'], 200)
+                        macd_data = calculate_macd(hist_200d['Close'])
                 else:
                     current_price = info.get('currentPrice', info.get('regularMarketPrice', 0))
                 
@@ -308,6 +368,12 @@ def get_ticker_prices():
                     'previousClose': round(prev_close, 2) if prev_close else 0,
                     'vwap': vwap,
                     'rsi': rsi,
+                    'sma_20': sma_20,
+                    'sma_50': sma_50,
+                    'sma_200': sma_200,
+                    'macd': macd_data['macd'],
+                    'macd_signal': macd_data['signal'],
+                    'macd_histogram': macd_data['histogram'],
                     'level2': level2,
                     'bid': info.get('bid', current_price * 0.999) if current_price else 0,
                     'ask': info.get('ask', current_price * 1.001) if current_price else 0,
@@ -328,7 +394,9 @@ def get_ticker_prices():
                 stocks_data[symbol] = {
                     'price': 0, 'change': 0, 'changePercent': 0, 'volume': 0,
                     'volumeRatio': 1, 'marketCap': 0, 'previousClose': 0,
-                    'vwap': 0, 'rsi': 50, 'level2': {'bids': [], 'asks': []},
+                    'vwap': 0, 'rsi': 50, 'sma_20': 0, 'sma_50': 0, 'sma_200': 0,
+                    'macd': 0, 'macd_signal': 0, 'macd_histogram': 0,
+                    'level2': {'bids': [], 'asks': []},
                     'bid': 0, 'ask': 0, 'bidSize': 0, 'askSize': 0,
                     'dayHigh': 0, 'dayLow': 0, 'fiftyTwoWeekHigh': 0, 'fiftyTwoWeekLow': 0,
                     'earningsDisplay': 'erN/A', 'daysToEarnings': None, 'earningsDate': None,
@@ -539,7 +607,248 @@ def get_dark_pool_results():
     """Get dark pool scan results"""
     return jsonify(dark_pool_results)
 
+# Stock Symbol Validation and Autocomplete API Endpoints
+@app.route('/api/symbols/validate', methods=['POST'])
+def validate_symbol():
+    """Validate a stock symbol"""
+    try:
+        data = request.get_json()
+        symbol = data.get('symbol', '').strip()
+        
+        if not symbol:
+            return jsonify({'error': 'Symbol is required'}), 400
+        
+        result = stock_symbols_service.validate_symbol(symbol)
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f'Symbol validation error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/symbols/suggest')
+def suggest_symbols():
+    """Get stock symbol suggestions based on query"""
+    try:
+        query = request.args.get('q', '').strip()
+        limit = int(request.args.get('limit', 10))
+        
+        suggestions = stock_symbols_service.get_suggestions(query, limit)
+        return jsonify({'suggestions': suggestions})
+        
+    except Exception as e:
+        app.logger.error(f'Symbol suggestions error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/symbols/info/<symbol>')
+def get_symbol_info(symbol):
+    """Get comprehensive information about a stock symbol"""
+    try:
+        info = stock_symbols_service.get_symbol_info(symbol)
+        return jsonify(info)
+        
+    except Exception as e:
+        app.logger.error(f'Symbol info error for {symbol}: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/symbols/batch-validate', methods=['POST'])
+def batch_validate_symbols():
+    """Validate multiple symbols at once"""
+    try:
+        data = request.get_json()
+        symbols = data.get('symbols', [])
+        
+        if not symbols:
+            return jsonify({'error': 'Symbols list is required'}), 400
+        
+        results = stock_symbols_service.batch_validate(symbols)
+        return jsonify({'results': results})
+        
+    except Exception as e:
+        app.logger.error(f'Batch validation error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+# Enhanced Stock Data API Endpoints
+@app.route('/api/stock/comprehensive/<symbol>')
+def get_comprehensive_stock_data(symbol):
+    """Get comprehensive stock data including volume analytics, ranges, and technical indicators"""
+    try:
+        data = enhanced_stock_service.get_comprehensive_stock_data(symbol.upper())
+        return jsonify(data)
+        
+    except Exception as e:
+        app.logger.error(f'Comprehensive stock data error for {symbol}: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stock/chart-data/<symbol>')
+def get_chart_data(symbol):
+    """Get chart data for different timeframes"""
+    try:
+        timeframe = request.args.get('timeframe', '1d')
+        data = enhanced_stock_service.get_comprehensive_stock_data(symbol.upper())
+        
+        if 'error' in data:
+            return jsonify(data), 500
+        
+        chart_data = data.get('chart_data', {})
+        if timeframe in chart_data:
+            return jsonify({
+                'symbol': symbol.upper(),
+                'timeframe': timeframe,
+                'data': chart_data[timeframe]
+            })
+        else:
+            return jsonify({'error': f'Timeframe {timeframe} not available'}), 400
+        
+    except Exception as e:
+        app.logger.error(f'Chart data error for {symbol}: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stock/volume-analytics/<symbol>')
+def get_volume_analytics(symbol):
+    """Get detailed volume analytics for a stock"""
+    try:
+        data = enhanced_stock_service.get_comprehensive_stock_data(symbol.upper())
+        
+        if 'error' in data:
+            return jsonify(data), 500
+        
+        return jsonify({
+            'symbol': symbol.upper(),
+            'volume_analytics': data.get('volume_analytics', {}),
+            'timestamp': data.get('timestamp')
+        })
+        
+    except Exception as e:
+        app.logger.error(f'Volume analytics error for {symbol}: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stock/technical-indicators/<symbol>')
+def get_technical_indicators(symbol):
+    """Get technical indicators for a stock"""
+    try:
+        data = enhanced_stock_service.get_comprehensive_stock_data(symbol.upper())
+        
+        if 'error' in data:
+            return jsonify(data), 500
+        
+        return jsonify({
+            'symbol': symbol.upper(),
+            'technical_indicators': data.get('technical_indicators', {}),
+            'timestamp': data.get('timestamp')
+        })
+        
+    except Exception as e:
+        app.logger.error(f'Technical indicators error for {symbol}: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+# Options Analytics API Endpoints
+@app.route('/api/options/chain/<symbol>')
+def get_options_chain(symbol):
+    """Get comprehensive options chain with Greeks and analytics"""
+    try:
+        data = options_service.get_options_chain(symbol.upper())
+        return jsonify(data)
+        
+    except Exception as e:
+        app.logger.error(f'Options chain error for {symbol}: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/options/analytics/<symbol>')
+def get_options_analytics(symbol):
+    """Get options analytics including flow, Greeks, and unusual activity"""
+    try:
+        chain_data = options_service.get_options_chain(symbol.upper())
+        
+        if 'error' in chain_data:
+            return jsonify(chain_data), 500
+        
+        from datetime import datetime
+        return jsonify({
+            'symbol': symbol.upper(),
+            'analytics': chain_data.get('analytics', {}),
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f'Options analytics error for {symbol}: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/options/<symbol>')
+def options_detail(symbol):
+    """Detailed options analysis page"""
+    import time
+    cache_buster = int(time.time())
+    response = make_response(render_template('options_detail.html', symbol=symbol.upper(), cache_buster=cache_buster))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+# News API Endpoints
+@app.route('/api/news/stock/<symbol>')
+def get_stock_news(symbol):
+    """Get news for a specific stock"""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        data = news_service.get_stock_news(symbol.upper(), limit)
+        return jsonify(data)
+        
+    except Exception as e:
+        app.logger.error(f'Stock news error for {symbol}: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/news/market')
+def get_market_news():
+    """Get general market news"""
+    try:
+        limit = request.args.get('limit', 20, type=int)
+        data = news_service.get_market_news(limit)
+        return jsonify(data)
+        
+    except Exception as e:
+        app.logger.error(f'Market news error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/news/trending')
+def get_trending_news():
+    """Get trending financial news"""
+    try:
+        limit = request.args.get('limit', 15, type=int)
+        data = news_service.get_trending_news(limit)
+        return jsonify(data)
+        
+    except Exception as e:
+        app.logger.error(f'Trending news error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+# Technical Analysis API Endpoints
+@app.route('/api/technical/<symbol>')
+def get_technical_analysis(symbol):
+    """Get comprehensive technical analysis for a stock"""
+    try:
+        data = technical_service.get_technical_analysis(symbol.upper())
+        return jsonify(data)
+        
+    except Exception as e:
+        app.logger.error(f'Technical analysis error for {symbol}: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+# Fundamental Analysis API Endpoint
+@app.route('/api/fundamental/<symbol>')
+def get_fundamental_analysis(symbol):
+    """Get comprehensive fundamental analysis for a stock"""
+    try:
+        data = fundamental_service.get_fundamental_analysis(symbol.upper())
+        return jsonify(data)
+        
+    except Exception as e:
+        app.logger.error(f'Fundamental analysis error for {symbol}: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
-    print(" Starting Options Scanner on http://127.0.0.1:8080")
-    print(" Dark Pool Scanner available at http://127.0.0.1:8080/dark-pool")
-    app.run(host='0.0.0.0', port=8080, debug=False)
+    import os
+    port = int(os.environ.get('PORT', 8080))
+    print(f" Starting Options Scanner on port {port}")
+    print(" Dark Pool Scanner available at /dark-pool")
+    app.run(host='0.0.0.0', port=port, debug=False)

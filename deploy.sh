@@ -84,14 +84,6 @@ sudo make install --quiet
 sudo ldconfig
 cd "$PROJECT_DIR"
 
-# Install compatible NumPy first to avoid TA-Lib compilation issues
-print_status "Installing compatible NumPy version..."
-pip install "numpy<1.25.0"
-
-# Install TA-Lib Python wrapper separately with specific version
-print_status "Installing TA-Lib Python wrapper..."
-pip install --no-cache-dir TA-Lib==0.4.24
-
 # Check if virtual environment exists
 if [ ! -d "$VENV_PATH" ]; then
     print_error "Virtual environment not found at $VENV_PATH"
@@ -103,15 +95,21 @@ fi
 print_status "Activating virtual environment and updating dependencies..."
 source "$VENV_PATH/bin/activate"
 
+# Install compatible NumPy first to avoid TA-Lib compilation issues
+print_status "Installing compatible NumPy version..."
+pip install "numpy<1.25.0"
+
+# Install TA-Lib Python wrapper separately with specific version
+print_status "Installing TA-Lib Python wrapper..."
+pip install --no-cache-dir TA-Lib==0.4.24
+
 # Install/update requirements if requirements.txt exists
 if [ -f "requirements.txt" ]; then
     print_status "Installing/updating Python packages..."
     pip install -r requirements.txt
 else
     print_status "Installing basic Python packages..."
-    pip install flask gunicorn yfinance pandas numpy scikit-learn requests beautifulsoup4 lxml
-    # Install TA-Lib Python wrapper after C library is installed
-    pip install TA-Lib
+    pip install flask gunicorn yfinance pandas requests scikit-learn beautifulsoup4 lxml
 fi
 
 # Check if port 8080 is available, if not try port 80

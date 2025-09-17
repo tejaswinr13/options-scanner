@@ -3,7 +3,11 @@ Alternative Data Service
 Provides stock data using multiple sources to bypass Yahoo Finance rate limiting
 """
 
+import logging
+import time
 import requests
+import random
+from api_config import get_api_config
 import pandas as pd
 import numpy as np
 import time
@@ -17,27 +21,11 @@ class AlternativeDataService:
         self.cache = {}
         self.cache_duration = 300  # 5 minutes
         
-        # Free APIs that work well with cloud deployments
-        self.apis = {
-            'finnhub': {
-                'base_url': 'https://finnhub.io/api/v1',
-                'key': 'demo',  # Free tier
-                'rate_limit': 1.0  # 1 second between calls
-            },
-            'polygon': {
-                'base_url': 'https://api.polygon.io/v2',
-                'key': 'demo',  # Free tier
-                'rate_limit': 1.0
-            },
-            'iex': {
-                'base_url': 'https://cloud.iexapis.com/stable',
-                'key': 'pk_test',  # Sandbox key
-                'rate_limit': 0.5
-            }
-        }
+        # Load API configurations from config file
+        self.apis = get_api_config()
     
     def get_stock_data(self, symbol):
-        """Get stock data using alternative APIs with fast fallback to mock data"""
+        """Get stock data using alternative APIs with fallback to mock data"""
         cache_key = f"alt_stock_data_{symbol}"
         
         # Check cache first
@@ -46,11 +34,27 @@ class AlternativeDataService:
             if time.time() - cache_time < self.cache_duration:
                 return data
         
-        # Skip external APIs if network is problematic, go straight to mock data
-        # This ensures the app always works even with network issues
+        # Try real-time APIs first (with production keys)
+        for api_name, api_config in self.apis.items():
+            try:
+                # Only try if we have a real API key (not demo/test)
+                if api_config['key'] not in ['demo', 'pk_test']:
+                    data = self._fetch_from_api(symbol, api_name, api_config)
+                    if data and 'error' not in data:
+                        # Add real-time indicator to data
+                        data['source'] = f'Real-time data from {api_name}'
+                        data['timestamp'] = time.time()
+                        # Cache successful real-time result
+                        self.cache[cache_key] = (time.time(), data)
+                        return data
+            except Exception as e:
+                self.logger.warning(f"Failed to fetch real-time data from {api_name}: {e}")
+                continue
+        
+        # Fallback to mock data if no real APIs available or all failed
         data = self._get_mock_data(symbol)
         
-        # Cache the mock data
+        # Cache the mock data with shorter duration to retry real APIs sooner
         self.cache[cache_key] = (time.time(), data)
         return data
     
